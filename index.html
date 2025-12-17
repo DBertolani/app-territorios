@@ -665,47 +665,34 @@ function abrirMapa(idTerritorio, nomeTerritorio) {
 }
 
 // --- MODAL DETALHES ---
- function abrirDetalhesEndereco(numero, idTerritorio) {
+function abrirDetalhesEndereco(numero, idTerritorio) {
       var enderecos = enderecosCache[idTerritorio];
       var info = territorioInfoCache[idTerritorio]; 
-      
       if (!enderecos || !info) return alert("Erro de dados. Tente recarregar.");
-
       var end = enderecos[numero - 1]; 
-      
       if (mapaUnico) { mapaUnico.remove(); mapaUnico = null; }
-      
+
       document.getElementById('detalhes-endereco-titulo').innerText = 'Endereço Nº ' + numero;
       document.getElementById('detalhes-cidade').innerText = info.cidade;
       document.getElementById('detalhes-bairro').innerText = info.nome;
-
       document.getElementById('detalhes-rua').innerText = end.rua;
       document.getElementById('detalhes-numero').innerText = end.numero;
       document.getElementById('detalhes-referencia').innerText = end.referencia || 'N/A';
       document.getElementById('detalhes-gps').innerText = end.lat + ', ' + end.lng;
       
-      var linkGPS = 'maps.google.com/maps?q=...' + end.lat + ',' + end.lng;
+      var linkGPS = 'https://www.google.com/maps/search/?api=1&query=' + end.lat + ',' + end.lng;
       var btnRota = document.getElementById('btn-traçar-rota');
       btnRota.onclick = function() { window.open(linkGPS, '_blank'); };
 
       toggleModal('modal-endereco');
-      
       setTimeout(function() {
           mapaUnico = L.map('leaflet-map-unico').setView([end.lat, end.lng], 18);
-          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapaUnico);
-          
-          var numberedIcon = L.divIcon({ 
-              className: 'custom-numbered-icon', 
-              html: '<div style="background:#e74c3c; color:white; border-radius:50%; width:24px; height:24px; text-align:center; line-height:24px; font-weight:bold; border:2px solid white;">' + numero + '</div>', 
-              iconSize: [24, 24], 
-              iconAnchor: [12, 24] 
-          });
-          
+          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(mapaUnico);
+          var numberedIcon = L.divIcon({ className: 'custom-numbered-icon', html: '<div style="background:#e74c3c; color:white; border-radius:50%; width:24px; height:24px; text-align:center; line-height:24px; font-weight:bold; border:2px solid white;">' + numero + '</div>', iconSize: [24, 24], iconAnchor: [12, 24] });
           L.marker([end.lat, end.lng], { icon: numberedIcon }).addTo(mapaUnico).bindPopup('Ponto ' + numero).openPopup();
           mapaUnico.invalidateSize();
       }, 50);
 }
-
 function adicionarBotaoCompartilhar(idTerritorio, nomeTerritorio, listaEnderecos) {
     var divConteudo = document.getElementById('conteudo-mapa');
     var containerAcoes = document.getElementById('container-acoes-mapa-geral');
@@ -780,3 +767,4 @@ if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./service-
 </script>
 </body>
 </html>
+
