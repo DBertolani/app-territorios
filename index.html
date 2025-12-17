@@ -19,7 +19,6 @@
         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding-top: 70px; padding-bottom: 80px; font-size: 16px; }
         .app-header { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); z-index: 1000; }
         
-        /* Título com Nome do Usuário */
         .app-title { font-size: 1.2rem; font-weight: 700; color: #333; display: flex; align-items: center; gap: 8px; }
         
         .icon-btn { background: none; border: none; cursor: pointer; position: relative; color: #555; padding: 5px; }
@@ -40,7 +39,7 @@
         .btn-vermelho { background-color: #fff0f0; color: #e74c3c; border: 1px solid #ffcccc; }
         .btn-verde { background-color: #27ae60; color: white; }
         
-        /* --- MODAIS CORRIGIDOS --- */
+        /* --- MODAIS --- */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; justify-content: center; align-items: stretch; padding: 10px 0; }
         .modal-content { 
             background: #fff; 
@@ -50,32 +49,39 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
             display: flex; 
             flex-direction: column; 
-            max-height: calc(100vh - 40px); /* Margem de segurança */
+            max-height: calc(100vh - 40px); 
             overflow: hidden; 
-            padding: 0; /* Padding controlado internamente */
+            padding: 0; 
         }
         .modal-header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid #eee; }
         .modal-body { 
             flex: 1; 
             overflow-y: auto; 
-            padding: 20px; /* Mais espaço interno */
+            padding: 20px; 
         }
         .btn-close { background: #eee; border: none; border-radius: 50%; width: 30px; height: 30px; color: #333; padding: 0 !important; margin: 0 !important; display: flex; align-items: center; justify-content: center; }
         
-        /* Ajustes específicos de conteúdo */
+        /* MODAL DE CONFIRMAÇÃO */
+        #modal-confirmacao .modal-content { max-height: auto; height: auto; align-self: center; }
+        #modal-confirmacao h3 { margin-top: 0; color: #333; }
+        #modal-confirmacao p { color: #666; font-size: 1rem; margin-bottom: 20px; }
+        .acoes-confirmacao { display: flex; gap: 10px; }
+
+        /* OUTROS ESTILOS */
         #modal-mapa .modal-content > div:first-child p { margin: 3px 0 !important; font-size: 1rem !important; }
         #modal-endereco .modal-content div:first-child { margin-top: 5px; }
         .card-solicitacao { background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 10px; text-align: left; }
         select { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; margin: 5px 0; background: white;}
         
-        /* FOOTER & LOGIN */
         .app-footer { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
         .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; background: none; border: none; color: #999; font-size: 0.75rem; gap: 2px; padding: 0; margin: 0; width: auto; }
         .nav-item.active { color: #3498db; }
         .nav-item .material-icons { font-size: 24px; }
+        
         .tela-central { max-width: 90%; margin: 20px auto; background: white; padding: 25px; border-radius: 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; }
         .hidden { display: none !important; }
+        
         @media (max-width: 900px) { .container { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px; padding: 0 10px; } .card { padding: 10px; border-left-width: 4px; display: flex; flex-direction: column; justify-content: space-between; } .card h3 { font-size: 0.95rem; } .card p { font-size: 0.8rem; } button { padding: 10px !important; font-size: 0.9rem !important; margin-top: 5px; } }
         
         /* MAPAS */
@@ -93,47 +99,33 @@
         #modal-endereco .modal-content div { line-height: 1.5; margin-bottom: 5px; font-size: 1rem; }
         #detalhes-endereco-titulo { margin-bottom: 15px; font-size: 1.2rem; color: #333; }
         
-        /* FULLSCREEN */
         #btn-entrar-fullscreen { position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; border: none; border-radius: 4px; width: 32px; height: 32px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; color: #333; cursor: pointer; }
         .mapa-fullscreen { position: fixed !important; top: 0; left: 0; width: 100vw !important; height: 100vh !important; z-index: 9999 !important; background: white; border-radius: 0 !important; }
         #btn-sair-fullscreen { display: none; position: fixed; top: 20px; right: 20px; z-index: 10000; background: white; border: none; border-radius: 50%; width: 45px; height: 45px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); align-items: center; justify-content: center; color: #c00; cursor: pointer; }
         .mapa-fullscreen ~ #btn-sair-fullscreen { display: flex !important; }
         .mapa-fullscreen ~ #btn-entrar-fullscreen { display: none !important; }
         
-        /* SELEÇÃO */
+        /* SELEÇÃO E GESTÃO */
         .lista-selecao-itens { list-style: none; padding: 0; margin: 0; }
         .item-selecao { background: white; border: 1px solid #eee; margin-bottom: 8px; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; }
         .item-selecao:hover { background-color: #f9f9f9; border-color: #ccc; }
         .badge-status { color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
 
-        /* --- NOVO ESTILO PARA NOTIFICAÇÕES E GESTÃO --- */
-        .card-aprovacao {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            border-left: 5px solid #3498db;
-            margin-bottom: 10px;
-            overflow: hidden; /* Importante para o efeito de abrir/fechar */
-        }
+        .card-aprovacao { background: white; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid #3498db; margin-bottom: 10px; overflow: hidden; }
         .aprovacao-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
         .aprovacao-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-        
         .aprovacao-resumo { padding: 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #fff; transition: background 0.2s; }
         .aprovacao-resumo:active { background-color: #f5f5f5; }
-        
         .aprovacao-detalhes { padding: 0 15px 15px 15px; display: none; background: #fff; border-top: 1px solid #f0f0f0; }
         .aprovacao-detalhes.aberto { display: block; animation: slideDown 0.3s ease; }
-        
         .aprovacao-info h4 { margin: 0; font-size: 1rem; color: #333; }
         .aprovacao-info p { margin: 2px 0 0 0; font-size: 0.85rem; color: #666; }
 
-        /* Estilo para Lista de Usuários (Gestão) */
         .item-usuario { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .tags-roles span { background: #eef2f7; color: #3498db; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; }
 
         @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Checkboxes Personalizados */
         .lista-papeis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0; background: #f9f9f9; padding: 10px; border-radius: 8px; }
         .papel-item { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #444; cursor: pointer; }
         .papel-item input { width: 18px; height: 18px; margin: 0; cursor: pointer; }
@@ -194,7 +186,12 @@
       <div class="modal-content">
         <div class="modal-header">
             <h3 style="margin:0">🔔 Solicitações</h3>
-            <button class="btn-close" onclick="toggleModal('modal-admin')"><span class="material-icons">close</span></button>
+            <div style="display:flex; align-items:center;">
+                <button id="btn-gerir-users" class="icon-btn hidden" onclick="abrirGestaoUsuarios()" style="margin-right:10px;">
+                    <span class="material-icons" style="color:#3498db">group</span>
+                </button>
+                <button class="btn-close" onclick="toggleModal('modal-admin')"><span class="material-icons">close</span></button>
+            </div>
         </div>
         <div class="modal-body" id="lista-solicitacoes"><p style="text-align:center; color:#999;">Carregando...</p></div>
       </div>
@@ -210,6 +207,17 @@
             <p style="text-align:center;">Carregando...</p>
         </div>
       </div>
+    </div>
+
+    <div id="modal-confirmacao" class="modal-overlay hidden" style="z-index: 3000;">
+        <div class="modal-content" style="max-width: 350px; padding: 20px;">
+            <h3 id="confirm-titulo">Confirmação</h3>
+            <p id="confirm-texto">Tem certeza?</p>
+            <div class="acoes-confirmacao">
+                <button id="confirm-sim" class="btn-azul">Sim</button>
+                <button onclick="toggleModal('modal-confirmacao')" class="btn-azul" style="background:#eee; color:#333;">Não</button>
+            </div>
+        </div>
     </div>
 
     <div id="modal-perfil" class="modal-overlay hidden">
@@ -325,12 +333,10 @@ function processarLogin(r) {
     document.getElementById('perfil-nome').innerText = usuarioNome;
     document.getElementById('perfil-email').innerText = usuarioEmail;
     
-    // Nome no cabeçalho
     if(document.getElementById('header-nome-usuario')) {
         document.getElementById('header-nome-usuario').innerText = usuarioNome.split(' ')[0];
     }
     
-    // Lista os cargos no perfil
     var niveisHTML = usuarioNivel.split(',').map(function(n) {
         return '<span style="background:#eef2f7; color:#3498db; padding:4px 8px; border-radius:15px; font-size:0.8rem; margin:2px;">' + n.trim() + '</span>';
     }).join(' ');
@@ -368,8 +374,13 @@ function renderizarDados(resultado) {
   var roles = resultado.roles || {};
   var isAdmin = roles.admin;
 
+  // Lógica do Sininho e Botão de Gestão de Usuários
   if (isAdmin) {
     document.getElementById('btn-admin-bell').classList.remove('hidden');
+    // Mostra o botão de Gerenciar Usuários
+    if(document.getElementById('btn-gerir-users')) {
+        document.getElementById('btn-gerir-users').classList.remove('hidden');
+    }
   }
 
   var divLista = document.getElementById('lista-territorios');
@@ -385,6 +396,7 @@ function renderizarDados(resultado) {
     if (t.isMeu) classeStatus = 'status-Meu';
     var botaoHtml = '';
     
+    // Se "podeGerenciar" for true (Admin ou Dirigente), mostra o botão Designar
     if (t.podeGerenciar) {
         botaoHtml = '<button class="btn-designar" onclick="acionar(\'' + t.id + '\', \'designar\')"><span class="material-icons">assignment_ind</span> Designar</button>';
     } else if (t.status === 'Livre') {
@@ -393,7 +405,6 @@ function renderizarDados(resultado) {
         botaoHtml = '<button class="btn-desabilitado" disabled><span class="material-icons">lock</span> Ocupado</button>';
     }
 
-    // Botão de Ver Mapa (Condicional)
     var botaoMapa = t.podeAbrir 
         ? '<button class="btn-mapa"><span class="material-icons">map</span> Ver Endereços</button>'
         : '';
@@ -413,22 +424,29 @@ function renderizarDados(resultado) {
   });
 }
 
-// --- GESTÃO DE NOTIFICAÇÕES (ACORDEÃO) ---
+// --- FUNÇÃO DE CONFIRMAÇÃO VISUAL (Substitui confirm()) ---
+function confirmarAcao(titulo, texto, callback) {
+    document.getElementById('confirm-titulo').innerText = titulo;
+    document.getElementById('confirm-texto').innerText = texto;
+    
+    var btnSim = document.getElementById('confirm-sim');
+    // Remove eventos anteriores para não duplicar
+    var novoBtn = btnSim.cloneNode(true);
+    btnSim.parentNode.replaceChild(novoBtn, btnSim);
+    
+    novoBtn.onclick = function() {
+        toggleModal('modal-confirmacao');
+        callback();
+    };
+    
+    toggleModal('modal-confirmacao');
+}
+
+// --- GESTÃO DE NOTIFICAÇÕES ---
 function carregarSolicitacoes() {
   chamarAPI("buscarSolicitacoes", { email: usuarioEmail }).then(function(lista) {
     var divSol = document.getElementById('lista-solicitacoes');
     var badge = document.getElementById('admin-badge');
-    var modalHeader = document.querySelector('#modal-admin .modal-header');
-
-    if (!document.getElementById('btn-gerir-users')) {
-        var btnGerir = document.createElement('button');
-        btnGerir.id = 'btn-gerir-users';
-        btnGerir.className = 'icon-btn';
-        btnGerir.innerHTML = '<span class="material-icons" style="color:#3498db">group</span>';
-        btnGerir.onclick = abrirGestaoUsuarios;
-        btnGerir.style.marginRight = "10px";
-        modalHeader.insertBefore(btnGerir, modalHeader.lastElementChild);
-    }
 
     if (!lista || !lista.length) {
       divSol.innerHTML = '<div style="padding:30px; text-align:center; color:#aaa;">Nada pendente.</div>';
@@ -446,7 +464,6 @@ function carregarSolicitacoes() {
       var icone = p.tipo === 'TERRITORIO' ? 'map' : 'person_add';
       var cor = p.tipo === 'TERRITORIO' ? '#f39c12' : '#3498db';
       var titulo = p.tipo === 'TERRITORIO' ? 'Pedido de Mapa' : 'Novo Cadastro';
-      var subtitulo = p.nome;
       
       if (p.tipo === 'TERRITORIO') div.style.borderLeftColor = '#f39c12';
 
@@ -454,7 +471,7 @@ function carregarSolicitacoes() {
         '<div class="aprovacao-resumo" onclick="toggleDetalhes(\''+idUnico+'\')">' +
             '<div style="display:flex; align-items:center; gap:10px;">' +
                 '<div class="aprovacao-avatar" style="color:'+cor+'; background:#f9f9f9;"><span class="material-icons">'+icone+'</span></div>' +
-                '<div><h4 style="margin:0; font-size:0.95rem;">'+titulo+'</h4><p style="margin:0; font-size:0.85rem; color:#666;">'+subtitulo+'</p></div>' +
+                '<div><h4 style="margin:0; font-size:0.95rem;">'+titulo+'</h4><p style="margin:0; font-size:0.85rem; color:#666;">'+p.nome+'</p></div>' +
             '</div>' +
             '<span class="material-icons" id="icon-'+idUnico+'" style="color:#ccc;">expand_more</span>' +
         '</div>' +
@@ -524,11 +541,11 @@ function editarUsuario(emailAlvo, nivelAtual) {
     var novosPapeis = prompt("Edite os papéis separados por vírgula:", nivelAtual);
     if (novosPapeis === null || novosPapeis === nivelAtual) return;
     if (novosPapeis.trim() === "") {
-        if(confirm("Deseja EXCLUIR o usuário " + emailAlvo + "?")) {
+        confirmarAcao("Excluir Usuário", "Deseja remover " + emailAlvo + "?", function() {
             chamarAPI("excluirUsuario", { adminEmail: usuarioEmail, emailAlvo: emailAlvo }).then(function(r) {
                 alert(r.sucesso || r.erro); abrirGestaoUsuarios();
             });
-        }
+        });
         return;
     }
     chamarAPI("salvarEdicaoUsuario", { adminEmail: usuarioEmail, emailAlvo: emailAlvo, novosPapeis: novosPapeis }).then(function(r) {
@@ -541,19 +558,24 @@ function processarAprovacaoCadastro(emailAlvo, nomeAlvo, idContainerRoles) {
     var checkboxes = divRoles.querySelectorAll('input[type="checkbox"]:checked');
     if (checkboxes.length === 0) return alert("Selecione pelo menos uma função.");
     var papeisSelecionados = Array.from(checkboxes).map(cb => cb.value).join(', ');
-    if(!confirm('Aprovar ' + nomeAlvo + ' como: ' + papeisSelecionados + '?')) return;
-    chamarAPI("aprovarCadastro", { adminEmail: usuarioEmail, emailAlvo: emailAlvo, nomeAlvo: nomeAlvo, nivel: papeisSelecionados }).then(function(r) {
-       alert(r.sucesso || r.erro); carregarSolicitacoes();
+    
+    confirmarAcao("Aprovar Acesso", 'Aprovar ' + nomeAlvo + ' como: ' + papeisSelecionados + '?', function() {
+        chamarAPI("aprovarCadastro", { adminEmail: usuarioEmail, emailAlvo: emailAlvo, nomeAlvo: nomeAlvo, nivel: papeisSelecionados }).then(function(r) {
+           alert(r.sucesso || r.erro); carregarSolicitacoes();
+        });
     });
 }
 
-// --- OUTRAS FUNÇÕES ---
+// --- FUNÇÕES DE AÇÃO (ATUALIZADAS COM CONFIRMAÇÃO BONITA) ---
 function aprovarPedido(email, idTerritorio) {
-    if(!confirm('Designar ' + idTerritorio + ' para este publicador?')) return;
-    chamarAPI("aprovarPedidoTerritorio", { email: email, idTerritorio: idTerritorio }).then(function(r) {
-        alert(r.sucesso || r.erro); carregarSolicitacoes(); carregarSistema(); 
+    confirmarAcao("Designar Cartão", 'Designar ' + idTerritorio + ' para este publicador?', function() {
+        document.getElementById('lista-solicitacoes').innerHTML = '<p style="text-align:center;">Processando...</p>';
+        chamarAPI("aprovarPedidoTerritorio", { email: email, idTerritorio: idTerritorio }).then(function(r) {
+            alert(r.sucesso || r.erro); carregarSolicitacoes(); carregarSistema(); 
+        });
     });
 }
+
 function recusarPedido(email, info, tipo) {
     var motivo = prompt("Motivo da recusa:", "Indisponível");
     if (motivo === null) return; 
@@ -561,6 +583,7 @@ function recusarPedido(email, info, tipo) {
         alert(r.sucesso || r.erro); carregarSolicitacoes();
     });
 }
+
 function sugerirOutro(email, idAtual) {
     abrirSeletorTerritorio(function(novoID) {
         if (!novoID) return;
@@ -569,12 +592,20 @@ function sugerirOutro(email, idAtual) {
         });
     });
 }
+
 function acionar(id, acao) {
-    if(!confirm('Confirma ' + acao + '?')) return;
-    chamarAPI("processarAcaoTerritorio", { id: id, tipoAcao: acao, email: usuarioEmail }).then(function(r) {
-          if (r.erro) alert(r.erro); else { alert(r.sucesso); carregarSistema(); }
-      });
+    // Texto personalizado
+    var texto = (acao === 'designar') ? 'Deseja designar este território?' : 'Deseja pedir este território?';
+    
+    confirmarAcao(acao.charAt(0).toUpperCase() + acao.slice(1), texto, function() {
+        document.getElementById('lista-territorios').style.opacity = '0.5';
+        chamarAPI("processarAcaoTerritorio", { id: id, tipoAcao: acao, email: usuarioEmail }).then(function(r) {
+              document.getElementById('lista-territorios').style.opacity = '1';
+              if (r.erro) alert(r.erro); else { alert(r.sucesso); carregarSistema(); }
+        });
+    });
 }
+
 function enviarSolicitacao() {
     var nome = document.getElementById('cad-nome').value;
     var tel = document.getElementById('cad-tel').value;
@@ -583,6 +614,7 @@ function enviarSolicitacao() {
        if(r.erro) alert(r.erro); else { alert(r.sucesso); location.reload(); }
     });
 }
+
 function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
 
 // --- MAPAS LEAFLET ---
@@ -626,43 +658,54 @@ function abrirMapa(idTerritorio, nomeTerritorio) {
             });
             if (bounds.length > 0) mapaAtual.fitBounds(bounds, { padding: [20, 20] });
             
-            // Adiciona botões de compartilhar se existirem endereços
             adicionarBotaoCompartilhar(idTerritorio, nomeTerritorio, enderecos);
             
          }, 150); 
      });
 }
+
 // --- MODAL DETALHES ---
-function abrirDetalhesEndereco(numero, idTerritorio) {
+ function abrirDetalhesEndereco(numero, idTerritorio) {
       var enderecos = enderecosCache[idTerritorio];
       var info = territorioInfoCache[idTerritorio]; 
+      
       if (!enderecos || !info) return alert("Erro de dados. Tente recarregar.");
-      var end = enderecos[numero - 1]; 
-      if (mapaUnico) { mapaUnico.remove(); mapaUnico = null; }
 
+      var end = enderecos[numero - 1]; 
+      
+      if (mapaUnico) { mapaUnico.remove(); mapaUnico = null; }
+      
       document.getElementById('detalhes-endereco-titulo').innerText = 'Endereço Nº ' + numero;
       document.getElementById('detalhes-cidade').innerText = info.cidade;
       document.getElementById('detalhes-bairro').innerText = info.nome;
+
       document.getElementById('detalhes-rua').innerText = end.rua;
       document.getElementById('detalhes-numero').innerText = end.numero;
       document.getElementById('detalhes-referencia').innerText = end.referencia || 'N/A';
       document.getElementById('detalhes-gps').innerText = end.lat + ', ' + end.lng;
       
-      var linkGPS = 'https://www.google.com/maps/search/?api=1&query=' + end.lat + ',' + end.lng;
+      var linkGPS = 'maps.google.com/maps?q=...' + end.lat + ',' + end.lng;
       var btnRota = document.getElementById('btn-traçar-rota');
       btnRota.onclick = function() { window.open(linkGPS, '_blank'); };
 
       toggleModal('modal-endereco');
+      
       setTimeout(function() {
           mapaUnico = L.map('leaflet-map-unico').setView([end.lat, end.lng], 18);
-          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(mapaUnico);
-          var numberedIcon = L.divIcon({ className: 'custom-numbered-icon', html: '<div style="background:#e74c3c; color:white; border-radius:50%; width:24px; height:24px; text-align:center; line-height:24px; font-weight:bold; border:2px solid white;">' + numero + '</div>', iconSize: [24, 24], iconAnchor: [12, 24] });
+          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapaUnico);
+          
+          var numberedIcon = L.divIcon({ 
+              className: 'custom-numbered-icon', 
+              html: '<div style="background:#e74c3c; color:white; border-radius:50%; width:24px; height:24px; text-align:center; line-height:24px; font-weight:bold; border:2px solid white;">' + numero + '</div>', 
+              iconSize: [24, 24], 
+              iconAnchor: [12, 24] 
+          });
+          
           L.marker([end.lat, end.lng], { icon: numberedIcon }).addTo(mapaUnico).bindPopup('Ponto ' + numero).openPopup();
           mapaUnico.invalidateSize();
       }, 50);
 }
 
-// COMPARTILHAMENTO
 function adicionarBotaoCompartilhar(idTerritorio, nomeTerritorio, listaEnderecos) {
     var divConteudo = document.getElementById('conteudo-mapa');
     var containerAcoes = document.getElementById('container-acoes-mapa-geral');
@@ -711,7 +754,6 @@ function alternarTelaCheia() {
     setTimeout(function() { if (mapaAtual) { mapaAtual.invalidateSize(); } }, 200);
 }
 
-// SELETOR
 function abrirSeletorTerritorio(cb) {
     window.callbackSelecao = cb;
     toggleModal('modal-selecao');
@@ -738,4 +780,3 @@ if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./service-
 </script>
 </body>
 </html>
-
