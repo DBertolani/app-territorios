@@ -278,7 +278,10 @@ function carregarSistema() {
 
 function renderizarDados(resultado) {
   var lista = resultado.mapas || [];
-  var isAdmin = resultado.isAdmin;
+    
+      
+    var roles = resultado.roles || {}; 
+    var isAdmin = roles.admin;
 
   if (isAdmin) {
     document.getElementById('btn-admin-bell').classList.remove('hidden');
@@ -642,6 +645,7 @@ function filtrarListaSelecao(texto) {
 </script>
 </body>
 </html>
+
 
 
 
