@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Territórios</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        /* --- ESTILOS BASE --- */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding-top: 70px; padding-bottom: 80px; font-size: 16px; }
+        .app-header { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); z-index: 1000; }
+        .app-title { font-size: 1.2rem; font-weight: 700; color: #333; display: flex; align-items: center; gap: 5px; }
+        .icon-btn { background: none; border: none; cursor: pointer; position: relative; color: #555; padding: 5px; }
+        .badge { position: absolute; top: 0; right: 0; background: #e74c3c; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; }
+        .container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; padding: 0 15px; max-width: 1200px; margin: 0 auto; }
+        .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: left; border-left: 5px solid #ccc; }
+        .card h3 { margin: 0 0 5px 0; color: #333; font-size: 1.1rem; font-weight: 700; }
+        .card p { margin: 3px 0; color: #666; font-size: 0.95rem; }
+        .status-Livre { border-left-color: #27ae60; }
+        .status-Ocupado { border-left-color: #e74c3c; opacity: 0.9; }
+        .status-Meu { border-left-color: #3498db; background-color: #f0f8ff; border: 2px solid #3498db; }
+        button { cursor: pointer; padding: 12px; border: none; border-radius: 8px; font-weight: bold; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1rem; margin-top: 10px; transition: transform 0.1s; }
+        button:active { transform: scale(0.98); }
+        .btn-pedir { background-color: #27ae60; color: white; }
+        .btn-designar { background-color: #f39c12; color: white; }
+        .btn-desabilitado { background-color: #eee; color: #aaa; }
+        .btn-azul { background-color: #3498db; color: white; }
+        .btn-vermelho { background-color: #fff0f0; color: #e74c3c; border: 1px solid #ffcccc; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; justify-content: center; align-items: stretch; padding: 8px 0; }
+        .modal-content { background: #fff; width: 95%; max-width: 720px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: calc(100vh - 16px); overflow: hidden; }
+        .modal-header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #eee; }
+        .modal-body { flex: 1; overflow-y: auto; padding: 10px; }
+        .btn-close { background: #eee; border: none; border-radius: 50%; width: 30px; height: 30px; color: #333; padding: 0 !important; margin: 0 !important; display: flex; align-items: center; justify-content: center; }
+        #modal-mapa .modal-content > div:first-child p { margin: 3px 0 !important; font-size: 1rem !important; }
+        #modal-endereco .modal-content div:first-child { margin-top: 5px; }
+        .card-solicitacao { background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 10px; text-align: left; }
+        select { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; margin: 5px 0; background: white;}
+        .btn-verde { width: 100%; margin-top: 5px; padding: 12px; background-color: #27ae60; color: white; }
+        .app-footer { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; background: none; border: none; color: #999; font-size: 0.75rem; gap: 2px; padding: 0; margin: 0; width: auto; }
+        .nav-item.active { color: #3498db; }
+        .nav-item .material-icons { font-size: 24px; }
+        .tela-central { max-width: 90%; margin: 20px auto; background: white; padding: 25px; border-radius: 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; }
+        .hidden { display: none !important; }
+        @media (max-width: 900px) { .container { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px; padding: 0 10px; } .card { padding: 10px; border-left-width: 4px; display: flex; flex-direction: column; justify-content: space-between; } .card h3 { font-size: 0.95rem; } .card p { font-size: 0.8rem; } button { padding: 10px !important; font-size: 0.9rem !important; margin-top: 5px; } }
+        #conteudo-mapa { width: 100%; border-radius: 8px; z-index: 1; }
+        .leaflet-popup-content { font-family: 'Segoe UI', sans-serif; font-size: 14px; text-align: center;}
+        .lista-enderecos-cartao { margin-top: 15px; padding: 0; list-style: none; text-align: left; border-top: 1px solid #eee; padding-top: 10px; }
+        .lista-enderecos-cartao li { background: #fff; border: 1px solid #ddd; border-left: 5px solid #3498db; border-radius: 6px; padding: 12px 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; line-height: normal; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .lista-enderecos-cartao .numero { font-weight: bold; font-size: 1.2rem; color: #3498db; min-width: 30px; text-align: center; flex-shrink: 0; }
+        .lista-enderecos-cartao li > div { display: flex; flex-direction: column; gap: 1px; flex-grow: 1; }
+        .endereco-principal { font-size: 0.95rem; font-weight: bold; line-height: 1.3; margin: 0; }
+        .endereco-ref { color: #888; font-size: 0.8rem; line-height: 1.2; margin: 0; margin-top: 2px; }
+        .modal-content button { margin-top: 8px !important; margin-bottom: 8px !important; }
+        .modal-content button:last-child { margin-bottom: 0px !important; }
+        #modal-endereco .modal-content { padding: 20px 20px !important; }
+        #modal-endereco .modal-content div { line-height: 1.5; margin-bottom: 5px; font-size: 1rem; }
+        #detalhes-endereco-titulo { margin-bottom: 15px; font-size: 1.2rem; color: #333; }
+        #btn-entrar-fullscreen { position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; border: none; border-radius: 4px; width: 32px; height: 32px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; color: #333; cursor: pointer; }
+        .mapa-fullscreen { position: fixed !important; top: 0; left: 0; width: 100vw !important; height: 100vh !important; z-index: 9999 !important; background: white; border-radius: 0 !important; }
+        #btn-sair-fullscreen { display: none; position: fixed; top: 20px; right: 20px; z-index: 10000; background: white; border: none; border-radius: 50%; width: 45px; height: 45px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); align-items: center; justify-content: center; color: #c00; cursor: pointer; }
+        .mapa-fullscreen ~ #btn-sair-fullscreen { display: flex !important; }
+        .mapa-fullscreen ~ #btn-entrar-fullscreen { display: none !important; }
+        .lista-selecao-itens { list-style: none; padding: 0; margin: 0; }
+        .item-selecao { background: white; border: 1px solid #eee; margin-bottom: 8px; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; }
+        .item-selecao:hover { background-color: #f9f9f9; border-color: #ccc; }
+        .badge-status { color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <header class="app-header hidden" id="app-header">
+      <div class="app-title"><span class="material-icons" style="color:#3498db">map</span> Territórios</div>
+      <div class="header-actions">
+        <button class="icon-btn hidden" id="btn-admin-bell" onclick="toggleModal('modal-admin')">
+          <span class="material-icons">notifications</span>
+          <span class="badge hidden" id="admin-badge">0</span>
+        </button>
+      </div>
+    </header>
+
+    <div id="tela-login" class="tela-central hidden">
+      <h2>👤 Entrar</h2>
+      <p>Bem-vindo ao sistema.</p>
+      <input type="email" id="login-email" placeholder="seuemail@exemplo.com">
+      <button class="btn-azul" onclick="fazerLogin()">Acessar</button>
+    </div>
+
+    <div id="tela-pendente" class="tela-central hidden">
+      <h2>⏳ Aguardando</h2>
+      <span class="material-icons" style="font-size: 48px; color: #f39c12;">hourglass_top</span>
+      <p>Sua solicitação está em análise.</p>
+      <button onclick="fazerLogout()" style="background:#f0f0f0; color:#333;">Voltar</button>
+    </div>
+
+    <div id="tela-cadastro" class="tela-central hidden">
+      <h2>🔒 Acesso Restrito</h2>
+      <p>Solicite seu cadastro.</p>
+      <input type="text" id="cad-nome" placeholder="Seu Nome">
+      <input type="tel" id="cad-tel" placeholder="Telefone">
+      <button class="btn-azul" onclick="enviarSolicitacao()">Solicitar</button>
+      <button onclick="fazerLogout()" style="background:transparent; color:#666; margin-top:5px;">Cancelar</button>
+    </div>
+
+    <div id="tela-sistema" class="hidden">
+      <div id="lista-territorios" class="container"></div>
+    </div>
+
+    <nav class="app-footer hidden" id="app-footer">
+      <button class="nav-item active"><span class="material-icons">dashboard</span> <span>Cartões</span> </button>
+      <button class="nav-item" onclick="toggleModal('modal-perfil')"><span class="material-icons">person</span><span>Perfil</span></button>
+    </nav>
+
+    <div id="modal-admin" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header"><h3 style="margin:0">🔔 Solicitações</h3><button class="btn-close" onclick="toggleModal('modal-admin')"><span class="material-icons">close</span></button></div>
+        <div id="lista-solicitacoes"><p style="text-align:center; color:#999;">Carregando...</p></div>
+      </div>
+    </div>
+
+    <div id="modal-perfil" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header"><h3 style="margin:0">Meu Perfil</h3><button class="btn-close" onclick="toggleModal('modal-perfil')"><span class="material-icons">close</span></button></div>
+        <span class="material-icons" style="font-size: 60px; color:#ccc; margin-bottom:10px;">account_circle</span>
+        <h2 id="perfil-nome" style="margin:5px 0;">---</h2>
+        <p id="perfil-email" style="color:#666; margin-bottom:20px;">---</p>
+        <button class="btn-vermelho" onclick="fazerLogout()"><span class="material-icons">logout</span> Sair da Conta</button>
+      </div>
+    </div>
+
+    <div id="modal-mapa" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header"><h3 style="margin:0" id="titulo-mapa">...</h3><button class="btn-close" onclick="toggleModal('modal-mapa')"><span class="material-icons">close</span></button></div>
+            <div class="modal-body"><div id="conteudo-mapa" style="text-align:left;"><p style="text-align:center; color:#aaa;">Carregando...</p></div></div>
+        </div>
+    </div>
+
+    <div id="modal-endereco" class="modal-overlay hidden">
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header"><h3 style="margin:0" id="detalhes-endereco-titulo">Endereço Nº X</h3><button class="btn-close" onclick="toggleModal('modal-endereco')"><span class="material-icons">close</span></button></div>
+        <div style="text-align:left; margin-bottom: 15px;">
+            <p style="margin:2px 0;"><strong>Cidade:</strong> <span id="detalhes-cidade">---</span></p>
+            <p style="margin:2px 0;"><strong>Bairro/Região:</strong> <span id="detalhes-bairro">---</span></p>
+            <hr style="margin: 10px 0;">
+            <p style="margin:2px 0;"><strong>Rua:</strong> <span id="detalhes-rua">---</span></p>
+            <p style="margin:2px 0;"><strong>Número:</strong> <span id="detalhes-numero">---</span></p>
+            <p style="margin:2px 0;"><strong>Referência:</strong> <span id="detalhes-referencia">---</span></p>
+            <p style="margin:2px 0;"><strong>GPS:</strong> <span id="detalhes-gps">---</span></p>
+        </div>
+        <div id="leaflet-map-unico" style="height:300px; width:100%; border-radius: 8px;"></div>
+        <button class="btn-designar" id="btn-traçar-rota" style="margin-top:15px;" target="_blank"><span class="material-icons">directions</span> Traçar Rota no Maps</button>
+        <button class="btn-azul" style="margin-top:10px; background-color:#ccc; color:#333;" onclick="toggleModal('modal-endereco')">Fechar</button>
+      </div>
+    </div>
+
+    <div id="modal-selecao" class="modal-overlay hidden">
+      <div class="modal-content" style="height: 80vh; display:flex; flex-direction:column;">
+        <div class="modal-header"><h3 style="margin:0;">Escolher Território</h3><button class="btn-close" onclick="toggleModal('modal-selecao')"><span class="material-icons">close</span></button></div>
+        <div style="padding:10px; border-bottom:1px solid #eee;">
+            <input type="text" placeholder="Filtrar por número ou bairro..." onkeyup="filtrarListaSelecao(this.value)" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px;">
+        </div>
+        <div id="corpo-selecao" class="modal-body" style="flex:1; overflow-y:auto; background:#f4f6f8;">
+          <p style="text-align:center; padding:20px; color:#666;">Carregando...</p>
+        </div>
+      </div>
+    </div>
+
+<script>
+// ============================================
+// ⚠️ COLOQUE O SEU LINK DE IMPLANTAÇÃO AQUI:
+const API_URL = "https://script.google.com/macros/s/AKfycbw_B0RlBbzKBft76h-HT1kYjE9fbh2udZfZ-uuMMgmLReBlFiIl2N3Xkv_pE8ndBKn1mA/exec"; 
+// ============================================
+
+// --- FUNÇÃO MÁGICA DE CONEXÃO (Substitui google.script.run) ---
+async function chamarAPI(acao, dados = {}) {
+    if (API_URL.includes("SUA_URL")) {
+        alert("ERRO: Você esqueceu de colocar o link da API no código!");
+        return { erro: "Link não configurado" };
+    }
+    
+    // Adiciona o nome da ação no pacote de dados
+    dados.acao = acao;
+
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify(dados)
+        });
+        return await response.json();
+    } catch (e) {
+        alert("Erro de conexão: " + e);
+        return { erro: e.toString() };
+    }
+}
+
+// --- VARIÁVEIS GLOBAIS ---
+var usuarioEmail = "";
+var usuarioNome = "";
+var mapaAtual = null; 
+var mapaUnico = null; 
+var enderecosCache = {};
+var territorioInfoCache = {}; 
+
+window.onload = function() {
+  var emailSalvo = localStorage.getItem('app_territorios_email');
+  if (emailSalvo) {
+    document.getElementById('login-email').value = emailSalvo;
+    fazerLogin();
+  } else {
+    document.getElementById('tela-login').classList.remove('hidden');
+  }
+};
+
+// ================= LOGIN E ADMIN =================
+function fazerLogin() {
+  var email = document.getElementById('login-email').value.trim();
+  if (!email) return alert("Digite seu e-mail.");
+  usuarioEmail = email;
+
+  var btn = document.querySelector('#tela-login button');
+  var txt = btn.innerHTML;
+  btn.innerHTML = "...";
+  btn.disabled = true;
+
+  // MODIFICADO: Usa chamarAPI
+  chamarAPI("verificarLogin", { email: email }).then(function(r) {
+    processarLogin(r);
+    btn.innerHTML = txt;
+    btn.disabled = false;
+  });
+}
+
+function processarLogin(r) {
+  document.getElementById('tela-login').classList.add('hidden');
+  document.getElementById('tela-pendente').classList.add('hidden');
+  document.getElementById('tela-cadastro').classList.add('hidden');
+
+  if (r.status === "APROVADO") {
+    usuarioNome = r.nome || "Publicador";
+    localStorage.setItem('app_territorios_email', usuarioEmail);
+    document.getElementById('perfil-nome').innerText = usuarioNome;
+    document.getElementById('perfil-email').innerText = usuarioEmail;
+    document.getElementById('app-header').classList.remove('hidden');
+    document.getElementById('app-footer').classList.remove('hidden');
+    document.getElementById('tela-sistema').classList.remove('hidden');
+    carregarSistema();
+  } else if (r.status === "PENDENTE") {
+    document.getElementById('tela-pendente').classList.remove('hidden');
+  } else {
+    document.getElementById('tela-cadastro').classList.remove('hidden');
+  }
+}
+
+function fazerLogout() {
+  localStorage.clear();
+  location.reload();
+}
+
+// ================= SISTEMA =================
+function carregarSistema() {
+  document.getElementById('lista-territorios').innerHTML = '<p style="text-align:center; margin-top:20px;">Carregando...</p>';
+
+  // MODIFICADO
+  chamarAPI("buscarTerritorios", { email: usuarioEmail }).then(renderizarDados);
+
+  carregarSolicitacoes();
+}
+
+function renderizarDados(resultado) {
+  var lista = resultado.mapas || [];
+  var isAdmin = resultado.isAdmin;
+
+  if (isAdmin) {
+    document.getElementById('btn-admin-bell').classList.remove('hidden');
+  }
+
+  var divLista = document.getElementById('lista-territorios');
+  divLista.innerHTML = '';
+
+  if (!lista.length) {
+    divLista.innerHTML = '<p style="text-align:center;">Nenhum território.</p>';
+    return;
+  }
+
+  lista.forEach(function(t) {
+    var classeStatus = 'status-' + t.status;
+    if (t.isMeu) classeStatus = 'status-Meu';
+
+    var card = document.createElement('div');
+    card.className = 'card ' + classeStatus;
+    
+    var botaoHtml = '';
+    if (t.podeGerenciar) {
+        botaoHtml = '<button class="btn-designar" onclick="acionar(\'' + t.id + '\', \'designar\')"><span class="material-icons">assignment_ind</span> Designar</button>';
+    } else if (t.status === 'Livre') {
+        botaoHtml = '<button class="btn-pedir" onclick="acionar(\'' + t.id + '\', \'pedir\')"><span class="material-icons">touch_app</span> Pedir</button>';
+    } else {
+        botaoHtml = '<button class="btn-desabilitado" disabled><span class="material-icons">lock</span> Ocupado</button>';
+    }
+
+    card.innerHTML = 
+      '<h3>' + t.id + '</h3>' +
+      '<p><strong>' + t.nome + '</strong></p>' +
+      '<p>' + t.status + (t.isMeu ? ' (Você)' : '') + '</p>' +
+      botaoHtml +
+      '<button class="btn-mapa"><span class="material-icons">map</span> Ver Endereços</button>';
+
+    card.querySelector('.btn-mapa').addEventListener('click', function() {
+      abrirMapa(t.id, t.nome);
+    });
+
+    divLista.appendChild(card);
+  });
+}
+
+// --- MAPA GERAL ---
+function abrirMapa(idTerritorio, nomeTerritorio) {
+    toggleModal('modal-mapa');
+    document.getElementById('titulo-mapa').innerText = 'Cartão Nº: ' + idTerritorio; 
+    var divConteudo = document.getElementById('conteudo-mapa');
+    divConteudo.innerHTML = '<div id="leaflet-map-container" style="height:250px; width:100%; display:flex; align-items:center; justify-content:center; color:#aaa;">Buscando dados do servidor...</div>';
+    
+    // MODIFICADO
+    chamarAPI("buscarEnderecosPorTerritorio", { id: idTerritorio }).then(function(resultado) { 
+         var enderecos = resultado.enderecos;
+         var cidade = resultado.cidade;
+
+         enderecosCache[idTerritorio] = enderecos;
+         territorioInfoCache[idTerritorio] = { nome: nomeTerritorio, cidade: cidade }; 
+
+         var infoHtml = 
+           '<div style="text-align:left; margin-bottom:15px; border-bottom: 1px solid #eee; padding-bottom:10px;">' +
+             '<p style="margin:2px 0; color:#555; font-size: 1.2rem;"><strong>Cidade:</strong> ' + cidade + '</p>' + 
+             '<p style="margin:2px 0; color:#555;"><strong>Bairro/Região:</strong> ' + nomeTerritorio + '</p>' +
+             '<p style="margin:2px 0; color:#999; font-size:0.9rem;">(Total de endereços: ' + enderecos.length + ')</p>' +
+           '</div>';
+
+         if (!enderecos || enderecos.length === 0) {
+             divConteudo.innerHTML = infoHtml + '<p style="margin-top:15px; color:#c00; text-align:center;">Nenhum endereço com GPS neste cartão.</p>';
+             return;
+         }
+         
+         divConteudo.innerHTML = infoHtml + 
+            '<div style="position:relative;">' + 
+                '<div id="leaflet-map-container" style="height:250px;width:100%;"></div>' +
+                '<button id="btn-entrar-fullscreen" onclick="alternarTelaCheia()" title="Expandir Mapa"><span class="material-icons">fullscreen</span></button>' +
+                '<button id="btn-sair-fullscreen" onclick="alternarTelaCheia()"><span class="material-icons">close</span></button>' +
+            '</div>';
+         
+         var ul = document.createElement('ul'); 
+         ul.className = 'lista-enderecos-cartao'; 
+         divConteudo.appendChild(ul); 
+
+         if (mapaAtual) { mapaAtual.remove(); mapaAtual = null; }
+         var bounds = [];
+         
+         setTimeout(function() {
+            mapaAtual = L.map('leaflet-map-container');
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(mapaAtual);
+
+            enderecos.forEach(function(end, index) {
+                var numero = index + 1; 
+                var latLng = [end.lat, end.lng];
+                bounds.push(latLng);
+                
+                var li = document.createElement('li');
+                li.className = 'item-endereco';
+                li.innerHTML = '<span class="numero">' + numero + '</span>' +
+                    '<div><div class="endereco-principal">' + end.rua + ', ' + end.numero + '</div>' +
+                    '<div class="endereco-ref">Ref.: ' + (end.referencia || 'Sem Referência') + '</div></div>';
+
+                li.addEventListener('click', function() { abrirDetalhesEndereco(numero, idTerritorio); });
+                ul.appendChild(li);
+
+                var numberedIcon = L.divIcon({ className: 'custom-numbered-icon', html: '<div style="background:#3498db; color:white; border-radius:50%; width:24px; height:24px; text-align:center; line-height:24px; font-weight:bold; border:2px solid white;">' + numero + '</div>', iconSize: [24, 24], iconAnchor: [12, 24] });
+                var popupId = 'popup-' + idTerritorio + '-' + numero;
+                var marker = L.marker(latLng, { icon: numberedIcon }).addTo(mapaAtual).bindPopup('<strong>' + numero + '. ' + end.rua + '</strong><br><button id="' + popupId + '">Ver Detalhes</button>');
+
+                marker.on('popupopen', function() {
+                    var btn = document.getElementById(popupId);
+                    if (btn) btn.onclick = function() { abrirDetalhesEndereco(numero, idTerritorio); };
+                });
+            });
+            
+            mapaAtual.invalidateSize(); 
+            if (bounds.length > 1) { mapaAtual.fitBounds(L.latLngBounds(bounds), { padding: [20, 20] }); } 
+            else if (bounds.length === 1) { mapaAtual.setView(bounds[0], 15); }
+            
+            adicionarBotaoCompartilhar(idTerritorio, nomeTerritorio, enderecos);
+
+         }, 150); 
+     });
+}
+
+// --- FUNÇÃO PARA ALTERNAR TELA CHEIA (PRINT) ---
+function alternarTelaCheia() {
+    var mapaDiv = document.getElementById('leaflet-map-container');
+    if (mapaDiv.classList.contains('mapa-fullscreen')) { mapaDiv.classList.remove('mapa-fullscreen'); } 
+    else { mapaDiv.classList.add('mapa-fullscreen'); }
+    setTimeout(function() { if (mapaAtual) { mapaAtual.invalidateSize(); } }, 200);
+}
+
+// --- MODAL DETALHES ---
+function abrirDetalhesEndereco(numero, idTerritorio) {
+      var enderecos = enderecosCache[idTerritorio];
+      var info = territorioInfoCache[idTerritorio]; 
+      if (!enderecos || !info) return alert("Erro de dados. Tente recarregar.");
+      var end = enderecos[numero - 1]; 
+      if (mapaUnico) { mapaUnico.remove(); mapaUnico = null; }
+
+      document.getElementById('detalhes-endereco-titulo').innerText = 'Endereço Nº ' + numero;
+      document.getElementById('detalhes-cidade').innerText = info.cidade;
+      document.getElementById('detalhes-bairro').innerText = info.nome;
+      document.getElementById('detalhes-rua').innerText = end.rua;
+      document.getElementById('detalhes-numero').innerText = end.numero;
+      document.getElementById('detalhes-referencia').innerText = end.referencia || 'N/A';
+      document.getElementById('detalhes-gps').innerText = end.lat + ', ' + end.lng;
+      
+      var linkGPS = 'https://www.google.com/maps/search/?api=1&query=' + end.lat + ',' + end.lng;
+      var btnRota = document.getElementById('btn-traçar-rota');
+      btnRota.onclick = function() { window.open(linkGPS, '_blank'); };
+
+      toggleModal('modal-endereco');
+      setTimeout(function() {
+          mapaUnico = L.map('leaflet-map-unico').setView([end.lat, end.lng], 18);
+          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(mapaUnico);
+          var numberedIcon = L.divIcon({ className: 'custom-numbered-icon', html: '<div style="background:#e74c3c; color:white; border-radius:50%; width:24px; height:24px; text-align:center; line-height:24px; font-weight:bold; border:2px solid white;">' + numero + '</div>', iconSize: [24, 24], iconAnchor: [12, 24] });
+          L.marker([end.lat, end.lng], { icon: numberedIcon }).addTo(mapaUnico).bindPopup('Ponto ' + numero).openPopup();
+          mapaUnico.invalidateSize();
+      }, 50);
+}
+
+// ================= COMPARTILHAMENTO =================
+function adicionarBotaoCompartilhar(idTerritorio, nomeTerritorio, listaEnderecos) {
+    var divConteudo = document.getElementById('conteudo-mapa');
+    var containerAcoes = document.getElementById('container-acoes-mapa-geral');
+    if (!containerAcoes) {
+        containerAcoes = document.createElement('div');
+        containerAcoes.id = 'container-acoes-mapa-geral';
+        containerAcoes.style.marginTop = '15px';
+        containerAcoes.style.display = 'flex';
+        containerAcoes.style.flexDirection = 'column'; 
+        containerAcoes.style.gap = '10px';
+        divConteudo.appendChild(containerAcoes); 
+    }
+    containerAcoes.innerHTML = 
+        '<button class="btn-designar" id="btn-compartilhar" style="background-color:#25D366; color: white;"><span class="material-icons">share</span> Enviar Lista no WhatsApp</button>' +
+        '<button class="btn-designar" id="btn-maps-multiplo" style="background-color:#4285F4; color: white;"><span class="material-icons">map</span> Abrir Todos no Maps</button>' +
+        '<button class="btn-azul" style="background-color:#eee; color:#333; border:1px solid #ccc;" onclick="toggleModal(\'modal-mapa\')">Fechar</button>';
+
+    document.getElementById('btn-compartilhar').onclick = function() { compartilharDadosTerritorio(idTerritorio, nomeTerritorio, listaEnderecos); };
+    document.getElementById('btn-maps-multiplo').onclick = function() { abrirRotaCompleta(listaEnderecos); };
+}
+
+function compartilharDadosTerritorio(id, nome, enderecos) {
+    if (!enderecos || enderecos.length === 0) return alert("Sem dados.");
+    var linkRota = gerarLinkRota(enderecos);
+    var textoLista = enderecos.map(function(end, index) { return '📍 *' + (index + 1) + '.* ' + end.rua + ', ' + (end.numero || 'S/N') + '\n   _Ref: ' + (end.referencia || '-') + '_'; }).join('\n\n');
+    var mensagem = '🗺️ *Território ' + id + '* - ' + nome + '\n\n' + textoLista + '\n\n' + '🔗 *Ver todos no Mapa:*\n' + linkRota;
+    var urlZap = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(mensagem.trim());
+    window.open(urlZap, '_blank');
+}
+
+function abrirRotaCompleta(enderecos) {
+    var link = gerarLinkRota(enderecos);
+    window.open(link, '_blank');
+}
+
+function gerarLinkRota(enderecos) {
+    var baseUrl = "https://www.google.com/maps/dir/";
+    var coordenadas = enderecos.map(function(e) { return e.lat + ',' + e.lng; }).join('/');
+    return baseUrl + coordenadas;
+}
+
+// ================= UTILS =================
+function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
+
+function carregarSolicitacoes() {
+  // MODIFICADO
+  chamarAPI("buscarSolicitacoes", { email: usuarioEmail }).then(function(lista) {
+    var divSol = document.getElementById('lista-solicitacoes');
+    var badge = document.getElementById('admin-badge');
+
+    if (!lista || !lista.length) {
+      divSol.innerHTML = '<p style="color:#aaa;text-align:center;">Nenhuma pendência.</p>';
+      badge.classList.add('hidden');
+      return;
+    }
+    badge.innerText = lista.length;
+    badge.classList.remove('hidden');
+    divSol.innerHTML = '';
+    
+    lista.forEach(function(p) {
+      var div = document.createElement('div');
+      div.className = 'card-solicitacao';
+      if (p.tipo === 'TERRITORIO') {
+          div.innerHTML = '<div style="margin-bottom:5px; border-left:3px solid #f39c12; padding-left:8px;"><strong>Pedido de Território</strong></div>' +
+            '<div><strong>' + p.nome + '</strong> quer o cartão:</div>' +
+            '<div style="font-size:1.1rem; color:#333; font-weight:bold; margin:5px 0;">' + p.info + '</div>' +
+            '<div style="font-size:0.8rem; color:#666;">' + p.email + '</div>' +
+            '<div style="margin-top:10px; display:flex; flex-direction:column; gap:5px;">' +
+              '<button class="btn-designar" style="padding:8px;" onclick="aprovarPedido(\'' + p.email + '\', \'' + p.info + '\')"><span class="material-icons">check_circle</span> Designar</button>' +
+              '<div style="display:flex; gap:5px;">' + 
+                  '<button class="btn-azul" style="padding:8px; flex:1; font-size:0.8rem;" onclick="sugerirOutro(\'' + p.email + '\', \'' + p.info + '\')"><span class="material-icons">edit</span> Sugerir</button>' +
+                  '<button class="btn-vermelho" style="padding:8px; flex:1; font-size:0.8rem;" onclick="recusarPedido(\'' + p.email + '\', \'' + p.info + '\', \'TERRITORIO\')"><span class="material-icons">block</span> Recusar</button>' +
+              '</div></div>';
+      } else {
+          div.innerHTML = '<div style="margin-bottom:5px; border-left:3px solid #27ae60; padding-left:8px;"><strong>Novo Cadastro</strong></div>' +
+            '<div><strong>' + p.nome + '</strong></div>' +
+            '<div style="font-size:0.8rem; color:#666;">' + p.email + '</div>' +
+            '<div style="font-size:0.8rem; color:#888;">Tel: ' + p.info + '</div>' +
+            '<div style="margin-top:5px;">' +
+              '<select id="nivel-' + p.email + '" style="width:100%; margin-bottom:5px;"><option value="Publicador">Publicador</option><option value="Servo">Servo</option><option value="Admin, Servo">Admin</option></select>' +
+              '<div style="display:flex; gap:5px;">' +
+                  '<button class="btn-verde" style="flex:1; padding:8px;" onclick="aprovar(\'' + p.email + '\', \'' + p.nome + '\')"><span class="material-icons">check</span> Aprovar</button>' +
+                  '<button class="btn-vermelho" style="flex:1; padding:8px;" onclick="recusarPedido(\'' + p.email + '\', \'' + p.info + '\', \'ACESSO\')"><span class="material-icons">close</span> Recusar</button>' +
+              '</div></div>';
+      }
+      divSol.appendChild(div);
+    });
+  });
+}
+
+function aprovarPedido(email, idTerritorio) {
+    if(!confirm('Designar ' + idTerritorio + ' para este publicador?')) return;
+    document.getElementById('lista-solicitacoes').innerHTML = '<p style="text-align:center;">Processando...</p>';
+    // MODIFICADO
+    chamarAPI("aprovarPedidoTerritorio", { email: email, idTerritorio: idTerritorio }).then(function(r) {
+        alert(r.sucesso || r.erro);
+        carregarSolicitacoes();
+        carregarSistema(); 
+    });
+}
+
+function sugerirOutro(email, idAtual) {
+    abrirSeletorTerritorio(function(novoID) {
+        if (!novoID) return;
+        document.getElementById('lista-solicitacoes').innerHTML = '<p style="text-align:center;">Enviando sugestão...</p>';
+        // MODIFICADO
+        chamarAPI("sugerirTrocaTerritorio", { email: email, idAtual: idAtual, novoID: novoID }).then(function(r) {
+            if(r.sucesso) { alert(r.sucesso); carregarSolicitacoes(); } else { alert(r.erro); carregarSolicitacoes(); }
+        });
+    });
+}
+
+function recusarPedido(email, info, tipo) {
+    var motivo = prompt("Motivo da recusa (será enviado por e-mail):", "Indisponível no momento");
+    if (motivo === null) return; 
+    document.getElementById('lista-solicitacoes').innerHTML = '<p style="text-align:center;">Recusando...</p>';
+    // MODIFICADO
+    chamarAPI("recusarSolicitacao", { email: email, info: info, tipo: tipo, motivo: motivo }).then(function(r) {
+        alert(r.sucesso || r.erro);
+        carregarSolicitacoes();
+    });
+}
+
+function acionar(id, acao) {
+    if(!confirm('Confirma ' + acao + '?')) return;
+    document.getElementById('lista-territorios').style.opacity = '0.5';
+    // MODIFICADO
+    chamarAPI("processarAcaoTerritorio", { id: id, tipoAcao: acao, email: usuarioEmail }).then(function(r) {
+          document.getElementById('lista-territorios').style.opacity = '1';
+          if (r.erro) alert(r.erro);
+          else { alert(r.sucesso); carregarSistema(); }
+      });
+}
+
+function aprovar(emailAlvo, nomeAlvo) {
+    var nivel = document.getElementById('nivel-' + emailAlvo).value;
+    if(!confirm('Aprovar ' + nomeAlvo + '?')) return;
+    document.getElementById('lista-solicitacoes').innerHTML = 'Processando...';
+    // MODIFICADO
+    chamarAPI("aprovarCadastro", { adminEmail: usuarioEmail, emailAlvo: emailAlvo, nomeAlvo: nomeAlvo, nivel: nivel }).then(function(r) {
+       alert(r.sucesso || r.erro); carregarSolicitacoes();
+    });
+}
+
+function enviarSolicitacao() {
+    var nome = document.getElementById('cad-nome').value;
+    var tel = document.getElementById('cad-tel').value;
+    if (!nome || !tel) return alert("Preencha todos os campos.");
+    var btn = document.querySelector('#tela-cadastro .btn-azul');
+    btn.innerHTML = "..."; btn.disabled = true;
+    // MODIFICADO
+    chamarAPI("solicitarCadastro", { nome: nome, tel: tel, email: usuarioEmail }).then(function(r) {
+       if(r.erro) { alert(r.erro); btn.disabled=false; btn.innerHTML="Tentar"; }
+       else { alert(r.sucesso); localStorage.setItem('app_territorios_email', usuarioEmail); location.reload(); }
+    });
+}
+
+// --- SELETOR ADMIN ---
+let callbackSelecao = null; 
+function abrirSeletorTerritorio(acaoCallback) {
+    callbackSelecao = acaoCallback;
+    toggleModal('modal-selecao'); 
+    const corpo = document.getElementById('corpo-selecao');
+    corpo.innerHTML = '<p style="text-align:center; padding:20px; color:#666;">Carregando lista de territórios...</p>';
+    // MODIFICADO
+    chamarAPI("listarTodosTerritoriosAdmin").then(function(lista) { renderizarListaSelecao(lista); });
+}
+
+function renderizarListaSelecao(lista) {
+    const corpo = document.getElementById('corpo-selecao');
+    corpo.innerHTML = ''; 
+    if (lista.length === 0) { corpo.innerHTML = '<p>Nenhum território encontrado.</p>'; return; }
+    const ul = document.createElement('ul');
+    ul.className = 'lista-selecao-itens';
+    lista.forEach(function(t) {
+        const li = document.createElement('li');
+        const corStatus = t.status === 'Livre' ? '#27ae60' : '#e74c3c';
+        li.style.borderLeft = '5px solid ' + corStatus;
+        li.className = 'item-selecao';
+        li.innerHTML = '<div style="flex:1;"><div style="font-weight:bold; font-size:1rem;">' + t.id + ' <span style="font-weight:normal; font-size:0.85rem; color:#555;">- ' + t.nome + '</span></div><div style="font-size:0.8rem; color:#666;">Última saída: <strong>' + t.data + '</strong></div></div><div style="text-align:right;"><span class="badge-status" style="background:' + corStatus + ';">' + t.status + '</span></div>';
+        li.onclick = function() { selecionarItem(t.id); };
+        ul.appendChild(li);
+    });
+    corpo.appendChild(ul);
+}
+function selecionarItem(idEscolhido) { toggleModal('modal-selecao'); if (callbackSelecao) callbackSelecao(idEscolhido); }
+function filtrarListaSelecao(texto) {
+    const termo = texto.toLowerCase();
+    const itens = document.querySelectorAll('.item-selecao');
+    itens.forEach(item => { const conteudo = item.innerText.toLowerCase(); item.style.display = conteudo.includes(termo) ? 'flex' : 'none'; });
+}
+</script>
+</body>
+</html>
