@@ -74,7 +74,66 @@
         .lista-selecao-itens { list-style: none; padding: 0; margin: 0; }
         .item-selecao { background: white; border: 1px solid #eee; margin-bottom: 8px; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; }
         .item-selecao:hover { background-color: #f9f9f9; border-color: #ccc; }
-        .badge-status { color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
+        .badge-status { color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; 
+
+            /* --- NOVO ESTILO PARA O CARTÃO DE APROVAÇÃO --- */
+.card-aprovacao {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-left: 5px solid #3498db;
+    margin-bottom: 15px;
+}
+.aprovacao-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.aprovacao-avatar {
+    background: #eef2f7;
+    color: #3498db;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.aprovacao-info h4 { margin: 0; font-size: 1rem; color: #333; }
+.aprovacao-info p { margin: 2px 0 0 0; font-size: 0.85rem; color: #666; }
+
+.lista-papeis {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 15px 0;
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 8px;
+}
+.papel-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #444;
+    cursor: pointer;
+}
+.papel-item input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+}
+.acoes-aprovacao {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+    
     </style>
 </head>
 <body>
@@ -489,51 +548,106 @@ function gerarLinkRota(enderecos) {
 function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
 
 function carregarSolicitacoes() {
-  // MODIFICADO
   chamarAPI("buscarSolicitacoes", { email: usuarioEmail }).then(function(lista) {
     var divSol = document.getElementById('lista-solicitacoes');
     var badge = document.getElementById('admin-badge');
 
     if (!lista || !lista.length) {
-      divSol.innerHTML = '<p style="color:#aaa;text-align:center;">Nenhuma pendência.</p>';
+      divSol.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; padding:30px; color:#aaa;"><span class="material-icons" style="font-size:40px; margin-bottom:10px;">inbox</span><p>Tudo limpo por aqui!</p></div>';
       badge.classList.add('hidden');
       return;
     }
+    
     badge.innerText = lista.length;
     badge.classList.remove('hidden');
     divSol.innerHTML = '';
     
     lista.forEach(function(p) {
       var div = document.createElement('div');
-      div.className = 'card-solicitacao';
+      
+      // --- TIPO 1: PEDIDO DE TERRITÓRIO ---
       if (p.tipo === 'TERRITORIO') {
-          div.innerHTML = '<div style="margin-bottom:5px; border-left:3px solid #f39c12; padding-left:8px;"><strong>Pedido de Território</strong></div>' +
-            '<div><strong>' + p.nome + '</strong> quer o cartão:</div>' +
-            '<div style="font-size:1.1rem; color:#333; font-weight:bold; margin:5px 0;">' + p.info + '</div>' +
-            '<div style="font-size:0.8rem; color:#666;">' + p.email + '</div>' +
-            '<div style="margin-top:10px; display:flex; flex-direction:column; gap:5px;">' +
-              '<button class="btn-designar" style="padding:8px;" onclick="aprovarPedido(\'' + p.email + '\', \'' + p.info + '\')"><span class="material-icons">check_circle</span> Designar</button>' +
-              '<div style="display:flex; gap:5px;">' + 
-                  '<button class="btn-azul" style="padding:8px; flex:1; font-size:0.8rem;" onclick="sugerirOutro(\'' + p.email + '\', \'' + p.info + '\')"><span class="material-icons">edit</span> Sugerir</button>' +
-                  '<button class="btn-vermelho" style="padding:8px; flex:1; font-size:0.8rem;" onclick="recusarPedido(\'' + p.email + '\', \'' + p.info + '\', \'TERRITORIO\')"><span class="material-icons">block</span> Recusar</button>' +
-              '</div></div>';
-      } else {
-          div.innerHTML = '<div style="margin-bottom:5px; border-left:3px solid #27ae60; padding-left:8px;"><strong>Novo Cadastro</strong></div>' +
-            '<div><strong>' + p.nome + '</strong></div>' +
-            '<div style="font-size:0.8rem; color:#666;">' + p.email + '</div>' +
-            '<div style="font-size:0.8rem; color:#888;">Tel: ' + p.info + '</div>' +
-            '<div style="margin-top:5px;">' +
-              '<select id="nivel-' + p.email + '" style="width:100%; margin-bottom:5px;"><option value="Publicador">Publicador</option><option value="Servo">Servo</option><option value="Admin, Servo">Admin</option></select>' +
-              '<div style="display:flex; gap:5px;">' +
-                  '<button class="btn-verde" style="flex:1; padding:8px;" onclick="aprovar(\'' + p.email + '\', \'' + p.nome + '\')"><span class="material-icons">check</span> Aprovar</button>' +
-                  '<button class="btn-vermelho" style="flex:1; padding:8px;" onclick="recusarPedido(\'' + p.email + '\', \'' + p.info + '\', \'ACESSO\')"><span class="material-icons">close</span> Recusar</button>' +
-              '</div></div>';
+          div.className = 'card-aprovacao';
+          div.style.borderLeftColor = '#f39c12'; // Laranja
+          div.innerHTML = 
+            '<div class="aprovacao-header">' +
+                '<div class="aprovacao-avatar" style="color:#f39c12; background:#fff5e6;"><span class="material-icons">map</span></div>' +
+                '<div class="aprovacao-info">' +
+                    '<h4>Pedido de Território</h4>' +
+                    '<p><strong>' + p.nome + '</strong> quer o cartão <strong>' + p.info + '</strong></p>' +
+                '</div>' +
+            '</div>' +
+            '<div class="acoes-aprovacao">' +
+              '<button class="btn-designar" style="flex:2;" onclick="aprovarPedido(\'' + p.email + '\', \'' + p.info + '\')"><span class="material-icons">check</span> Designar</button>' +
+              '<button class="btn-azul" style="flex:1; background:#eee; color:#555;" onclick="sugerirOutro(\'' + p.email + '\', \'' + p.info + '\')"><span class="material-icons">edit</span></button>' +
+              '<button class="btn-vermelho" style="flex:1;" onclick="recusarPedido(\'' + p.email + '\', \'' + p.info + '\', \'TERRITORIO\')"><span class="material-icons">close</span></button>' +
+            '</div>';
+      } 
+      // --- TIPO 2: NOVO CADASTRO (AQUI ESTÁ A MUDANÇA!) ---
+      else {
+          div.className = 'card-aprovacao';
+          div.innerHTML = 
+            '<div class="aprovacao-header">' +
+                '<div class="aprovacao-avatar"><span class="material-icons">person_add</span></div>' +
+                '<div class="aprovacao-info">' +
+                    '<h4>' + p.nome + '</h4>' +
+                    '<p>' + p.email + '</p>' +
+                    '<p style="font-size:0.75rem; color:#888;">Tel: ' + p.info + '</p>' +
+                '</div>' +
+            '</div>' +
+            
+            // Nova Área de Checkboxes
+            '<div class="lista-papeis" id="roles-' + p.email.replace(/[^a-zA-Z0-9]/g, '') + '">' +
+                '<label class="papel-item"><input type="checkbox" value="Publicador" checked> Publicador</label>' +
+                '<label class="papel-item"><input type="checkbox" value="Dirigente"> Dirigente</label>' +
+                '<label class="papel-item"><input type="checkbox" value="Editor"> Editor</label>' +
+                '<label class="papel-item"><input type="checkbox" value="Admin"> Admin</label>' +
+            '</div>' +
+
+            '<div class="acoes-aprovacao">' +
+                '<button class="btn-verde" style="flex:1;" onclick="processarAprovacaoCadastro(\'' + p.email + '\', \'' + p.nome + '\')"><span class="material-icons">check_circle</span> Aprovar Acesso</button>' +
+                '<button class="btn-vermelho" style="width:50px;" onclick="recusarPedido(\'' + p.email + '\', \'' + p.info + '\', \'ACESSO\')"><span class="material-icons">block</span></button>' +
+            '</div>';
       }
       divSol.appendChild(div);
     });
   });
 }
 
+
+    function processarAprovacaoCadastro(emailAlvo, nomeAlvo) {
+    // Cria um ID único baseado no email para achar a div correta
+    var idDiv = 'roles-' + emailAlvo.replace(/[^a-zA-Z0-9]/g, '');
+    var divRoles = document.getElementById(idDiv);
+    
+    // Pega todos os checkboxes marcados dentro dessa div
+    var checkboxes = divRoles.querySelectorAll('input[type="checkbox"]:checked');
+    
+    if (checkboxes.length === 0) {
+        return alert("Por favor, selecione pelo menos uma função para o usuário.");
+    }
+
+    // Junta os valores com vírgula (Ex: "Publicador, Editor")
+    var papeisSelecionados = Array.from(checkboxes).map(cb => cb.value).join(', ');
+
+    if(!confirm('Confirma aprovar ' + nomeAlvo + ' como: ' + papeisSelecionados + '?')) return;
+
+    // Visual de carregamento
+    document.getElementById('lista-solicitacoes').innerHTML = '<div style="text-align:center; padding:20px;"><span class="material-icons spin">refresh</span><br>Salvando permissões...</div>';
+
+    // Chama a API (sem mudar nada no backend!)
+    chamarAPI("aprovarCadastro", { 
+        adminEmail: usuarioEmail, 
+        emailAlvo: emailAlvo, 
+        nomeAlvo: nomeAlvo, 
+        nivel: papeisSelecionados 
+    }).then(function(r) {
+       alert(r.sucesso || r.erro); 
+       carregarSolicitacoes();
+    });
+}
+
+    
 function aprovarPedido(email, idTerritorio) {
     if(!confirm('Designar ' + idTerritorio + ' para este publicador?')) return;
     document.getElementById('lista-solicitacoes').innerHTML = '<p style="text-align:center;">Processando...</p>';
@@ -645,6 +759,7 @@ function filtrarListaSelecao(texto) {
 </script>
 </body>
 </html>
+
 
 
 
