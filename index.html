@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<style>
+    <style>
         /* --- 1. BASE & LAYOUT --- */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding-top: 70px; padding-bottom: 80px; font-size: 16px; }
@@ -50,31 +50,36 @@
         .btn-vermelho { background-color: #fff0f0; color: #e74c3c; border: 1px solid #ffcccc; }
         .btn-close { background: #eee; border: none; border-radius: 50%; width: 30px; height: 30px; color: #333; padding: 0 !important; margin: 0 !important; }
 
-        /* --- 5. MODAIS (Geral e Correções de Camadas) --- */
+        /* --- 5. MODAIS & TOAST --- */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; justify-content: center; align-items: stretch; padding: 10px 0; }
         .modal-content { background: #fff; width: 95%; max-width: 720px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: calc(100vh - 40px); overflow: hidden; padding: 0; }
         .modal-header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid #eee; }
         .modal-body { flex: 1; overflow-y: auto; padding: 20px; }
         
-        /* Ajustes Específicos de Z-Index e Layout */
+        /* Z-Index Fixes */
         #modal-confirmacao { z-index: 3000; }
         #modal-confirmacao .modal-content { max-height: auto; height: auto; align-self: center; padding: 20px; max-width: 350px; }
         #modal-endereco .modal-content { padding: 20px !important; }
-        #modal-users { z-index: 2100 !important; } /* Fica acima do perfil */
+        #modal-users, #modal-designar { z-index: 2100 !important; } /* Acima do perfil */
         #modal-users .modal-content { max-height: 85vh; }
 
-        /* --- 6. LISTAS, GESTÃO & ANIMAÇÕES --- */
+        /* Toast Notificações */
+        #toast-container { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 5000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; width: 90%; max-width: 400px; }
+        .toast { background: #333; color: #fff; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(-20px); transition: all 0.3s ease; font-size: 0.95rem; text-align: center; pointer-events: auto; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .toast.visible { opacity: 1; transform: translateY(0); }
+        .toast.sucesso { background-color: #27ae60; }
+        .toast.erro { background-color: #e74c3c; }
+
+        /* --- 6. LISTAS & GESTÃO --- */
         .card-solicitacao, .item-usuario { background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 10px; }
         .item-usuario { background: white; display: flex; justify-content: space-between; align-items: center; padding: 15px; }
         .tags-roles span { background: #eef2f7; color: #3498db; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; }
-        
-        /* Aprovações */
         .card-aprovacao { background: white; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid #3498db; margin-bottom: 10px; overflow: hidden; }
         .aprovacao-resumo { padding: 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #fff; }
         .aprovacao-detalhes { padding: 0 15px 15px; display: none; background: #fff; border-top: 1px solid #f0f0f0; }
         .aprovacao-detalhes.aberto { display: block; animation: slideDown 0.3s ease; }
-        .lista-papeis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0; background: #f9f9f9; padding: 10px; border-radius: 8px; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        .lista-papeis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0; background: #f9f9f9; padding: 10px; border-radius: 8px; }
 
         /* Seleção */
         .item-selecao { background: white; border: 1px solid #eee; margin-bottom: 8px; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
@@ -98,9 +103,10 @@
             button { padding: 10px !important; font-size: 0.9rem !important; margin-top: 5px; } 
         }
     </style>
-    
 </head>
 <body>
+
+    <div id="toast-container"></div>
 
     <header class="app-header hidden" id="app-header">
       <div class="app-title">
@@ -154,9 +160,7 @@
       <div class="modal-content">
         <div class="modal-header">
             <h3 style="margin:0">🔔 Solicitações</h3>
-            <div style="display:flex; align-items:center;">
-                <button class="btn-close" onclick="toggleModal('modal-admin')"><span class="material-icons">close</span></button>
-            </div>
+            <button class="btn-close" onclick="toggleModal('modal-admin')"><span class="material-icons">close</span></button>
         </div>
         <div class="modal-body" id="lista-solicitacoes"><p style="text-align:center; color:#999;">Carregando...</p></div>
       </div>
@@ -174,8 +178,24 @@
       </div>
     </div>
 
-    <div id="modal-confirmacao" class="modal-overlay hidden" style="z-index: 3000;">
-        <div class="modal-content" style="max-width: 350px; padding: 20px;">
+    <div id="modal-designar" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 400px; max-height: auto; align-self: center;">
+            <div class="modal-header">
+                <h3 style="margin:0">Designar Território</h3>
+                <button class="btn-close" onclick="toggleModal('modal-designar')"><span class="material-icons">close</span></button>
+            </div>
+            <div class="modal-body">
+                <p id="msg-designar-titulo">Para quem vai este cartão?</p>
+                <select id="sel-designar-pub">
+                    <option value="">Carregando lista...</option>
+                </select>
+                <button class="btn-designar" id="btn-confirmar-designacao">Confirmar Designação</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-confirmacao" class="modal-overlay hidden">
+        <div class="modal-content">
             <h3 id="confirm-titulo">Confirmação</h3>
             <p id="confirm-texto">Tem certeza?</p>
             <div class="acoes-confirmacao">
@@ -188,10 +208,8 @@
     <div id="modal-perfil" class="modal-overlay hidden">
       <div class="modal-content">
         <div class="modal-header"><h3 style="margin:0">Meu Perfil</h3><button class="btn-close" onclick="toggleModal('modal-perfil')"><span class="material-icons">close</span></button></div>
-        
         <div class="modal-body" style="text-align:center;">
             <span class="material-icons" style="font-size: 60px; color:#ccc; margin-bottom:10px;">account_circle</span>
-            
             <h2 id="perfil-nome" style="margin:5px 0;">---</h2>
             <p id="perfil-email" style="color:#666; margin-bottom:5px;">---</p>
             
@@ -208,7 +226,6 @@
         
             <button class="btn-vermelho" onclick="fazerLogout()"><span class="material-icons">logout</span> Sair da Conta</button>
         </div>
-          
       </div>
     </div>
 
@@ -258,7 +275,10 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw_B0RlBbzKBft76h-HT1kY
 // ============================================
 
 async function chamarAPI(acao, dados = {}) {
-    if (API_URL.includes("SUA_URL")) return alert("Link da API não configurado!");
+    if (API_URL.includes("SUA_URL")) {
+        mostrarNotificacao("Link da API não configurado!", "erro");
+        return { erro: "Configuração pendente" };
+    }
     dados.acao = acao;
     try {
         const response = await fetch(API_URL, { method: "POST", body: JSON.stringify(dados) });
@@ -272,6 +292,30 @@ var mapaAtual = null;
 var mapaUnico = null; 
 var enderecosCache = {};
 var territorioInfoCache = {}; 
+var idTerritorioParaDesignar = null; // Variável global para fluxo admin
+
+// --- SISTEMA DE TOAST (UX MELHORADA) ---
+function mostrarNotificacao(mensagem, tipo = "sucesso") {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${tipo}`;
+    
+    let icone = tipo === 'sucesso' ? 'check_circle' : 'error';
+    toast.innerHTML = `<span class="material-icons">${icone}</span> <span>${mensagem}</span>`;
+    
+    container.appendChild(toast);
+    
+    // Animação Entrada
+    requestAnimationFrame(() => {
+        toast.classList.add('visible');
+    });
+
+    // Remove após 3 segundos
+    setTimeout(() => {
+        toast.classList.remove('visible');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
 
 window.onload = function() {
   var emailSalvo = localStorage.getItem('app_territorios_email');
@@ -285,7 +329,7 @@ window.onload = function() {
 
 function fazerLogin() {
   var email = document.getElementById('login-email').value.trim();
-  if (!email) return alert("Digite seu e-mail.");
+  if (!email) return mostrarNotificacao("Digite seu e-mail.", "erro");
   usuarioEmail = email;
 
   var btn = document.querySelector('#tela-login button');
@@ -305,29 +349,24 @@ function processarLogin(r) {
 
   if (r.status === "APROVADO") {
     usuarioNome = r.nome || "Publicador";
-    var usuarioNivel = r.nivel || "Publicador"; // Ex: "Admin, Publicador"
+    var usuarioNivel = r.nivel || "Publicador";
     
     localStorage.setItem('app_territorios_email', usuarioEmail);
     localStorage.setItem('app_territorios_nivel', usuarioNivel);
 
-    // 1. Preenche dados visuais do Perfil
     document.getElementById('perfil-nome').innerText = usuarioNome;
     document.getElementById('perfil-email').innerText = usuarioEmail;
-    document.getElementById('perfil-funcao').innerText = usuarioNivel; // Mostra o texto completo
+    document.getElementById('perfil-funcao').innerText = usuarioNivel;
 
-    // 2. Atualiza Header
     if(document.getElementById('header-nome-usuario')) {
         document.getElementById('header-nome-usuario').innerText = usuarioNome.split(' ')[0];
     }
 
-    // 3. Lógica do Botão Admin (Gerenciar Usuários)
     var roles = usuarioNivel.toLowerCase();
     var painelAdmin = document.getElementById('area-admin-panel');
     
-    // Verifica se tem permissão (SINTAXE SEGURA: tudo na mesma linha)
     if (roles.includes('admin') || roles.includes('dirigente') || roles.includes('servo')) {
         painelAdmin.classList.remove('hidden');
-        // Mostra o sino de notificações também
         document.getElementById('btn-admin-bell').classList.remove('hidden');
     } else {
         painelAdmin.classList.add('hidden');
@@ -357,12 +396,12 @@ function carregarSistema() {
 function renderizarDados(resultado) {
   var lista = resultado.mapas || [];
   var roles = resultado.roles || {};
-  var isAdmin = roles.admin;
+  var isAdmin = roles.admin || roles.dirigente; // Flag para UI
 
-  // Lógica do Sininho e Botão de Gestão de Usuários
+  // Mostra sino se for admin
   if (isAdmin) {
     document.getElementById('btn-admin-bell').classList.remove('hidden');
-      }
+  }
 
   var divLista = document.getElementById('lista-territorios');
   divLista.innerHTML = '';
@@ -377,12 +416,17 @@ function renderizarDados(resultado) {
     if (t.isMeu) classeStatus = 'status-Meu';
     var botaoHtml = '';
     
-    // Se "podeGerenciar" for true (Admin ou Dirigente), mostra o botão Designar
+    // LÓGICA DE BOTÃO:
+    // Se pode gerenciar (Admin/Dirigente), botão DESIGNAR (que abre modal)
     if (t.podeGerenciar) {
         botaoHtml = '<button class="btn-designar" onclick="acionar(\'' + t.id + '\', \'designar\')"><span class="material-icons">assignment_ind</span> Designar</button>';
-    } else if (t.status === 'Livre') {
+    } 
+    // Se está livre, botão PEDIR (para qualquer um)
+    else if (t.status === 'Livre') {
         botaoHtml = '<button class="btn-pedir" onclick="acionar(\'' + t.id + '\', \'pedir\')"><span class="material-icons">touch_app</span> Pedir</button>';
-    } else {
+    } 
+    // Se está ocupado e é meu, ou se sou Admin, opção de devolver pode ser útil (não implementado no botão principal para simplificar, mas status mostra)
+    else {
         botaoHtml = '<button class="btn-desabilitado" disabled><span class="material-icons">lock</span> Ocupado</button>';
     }
 
@@ -405,13 +449,11 @@ function renderizarDados(resultado) {
   });
 }
 
-// --- FUNÇÃO DE CONFIRMAÇÃO VISUAL (Substitui confirm()) ---
 function confirmarAcao(titulo, texto, callback) {
     document.getElementById('confirm-titulo').innerText = titulo;
     document.getElementById('confirm-texto').innerText = texto;
     
     var btnSim = document.getElementById('confirm-sim');
-    // Remove eventos anteriores para não duplicar
     var novoBtn = btnSim.cloneNode(true);
     btnSim.parentNode.replaceChild(novoBtn, btnSim);
     
@@ -421,6 +463,83 @@ function confirmarAcao(titulo, texto, callback) {
     };
     
     toggleModal('modal-confirmacao');
+}
+
+// --- LÓGICA DE AÇÃO PRINCIPAL ---
+function acionar(id, acao) {
+    // SE FOR DESIGNAR (FLUXO DE ADMIN)
+    if (acao === 'designar') {
+        idTerritorioParaDesignar = id;
+        toggleModal('modal-designar');
+        document.getElementById('msg-designar-titulo').innerText = `Designar cartão ${id} para:`;
+        carregarListaPublicadoresNoSelect(); // Carrega lista no dropdown
+        return;
+    }
+
+    // SE FOR PEDIR (FLUXO NORMAL)
+    var texto = 'Deseja pedir este território?';
+    confirmarAcao('Pedir Território', texto, function() {
+        document.getElementById('lista-territorios').style.opacity = '0.5';
+        chamarAPI("processarAcaoTerritorio", { id: id, tipoAcao: acao, email: usuarioEmail }).then(function(r) {
+              document.getElementById('lista-territorios').style.opacity = '1';
+              if (r.erro) mostrarNotificacao(r.erro, "erro"); 
+              else { 
+                  mostrarNotificacao(r.sucesso, "sucesso"); 
+                  carregarSistema(); 
+              }
+        });
+    });
+}
+
+// --- FLUXO DE DESIGNAÇÃO (ADMIN) ---
+function carregarListaPublicadoresNoSelect() {
+    var select = document.getElementById('sel-designar-pub');
+    select.innerHTML = '<option value="">Carregando...</option>';
+    select.disabled = true;
+
+    chamarAPI("listarTodosUsuarios", { email: usuarioEmail }).then(function(res) {
+        select.innerHTML = '<option value="">Selecione um publicador...</option>';
+        select.disabled = false;
+        
+        // CORREÇÃO DE BUG: Verificar se res.usuarios existe
+        var lista = res.usuarios || [];
+        
+        // Ordena por nome
+        lista.sort((a,b) => a.nome.localeCompare(b.nome));
+
+        lista.forEach(function(u) {
+            var opt = document.createElement('option');
+            opt.value = u.email;
+            opt.innerText = u.nome;
+            select.appendChild(opt);
+        });
+
+        // Configura botão de confirmação
+        document.getElementById('btn-confirmar-designacao').onclick = finalizarDesignacaoAdmin;
+    });
+}
+
+function finalizarDesignacaoAdmin() {
+    var select = document.getElementById('sel-designar-pub');
+    var emailAlvo = select.value;
+    
+    if (!emailAlvo) return mostrarNotificacao("Selecione um publicador.", "erro");
+    if (!idTerritorioParaDesignar) return;
+
+    toggleModal('modal-designar');
+    mostrarNotificacao("Processando designação...", "sucesso"); // Feedback imediato
+
+    chamarAPI("processarAcaoTerritorio", { 
+        id: idTerritorioParaDesignar, 
+        tipoAcao: "designar", 
+        email: emailAlvo // Envia o email do ALVO, não o meu
+    }).then(function(r) {
+        if (r.erro) mostrarNotificacao(r.erro, "erro");
+        else {
+            mostrarNotificacao(r.sucesso, "sucesso");
+            carregarSistema();
+        }
+    });
 }
 
 // --- GESTÃO DE NOTIFICAÇÕES ---
@@ -498,15 +617,24 @@ function toggleDetalhes(id) {
     }
 }
 
-// --- GESTÃO DE USUÁRIOS ---
+// --- GESTÃO DE USUÁRIOS (Corrigido Bug Lista Branca) ---
 function abrirGestaoUsuarios() {
     toggleModal('modal-users');
     var divBody = document.getElementById('lista-users-body');
     divBody.innerHTML = '<p style="text-align:center; margin-top:20px;">Buscando usuários...</p>';
-    chamarAPI("listarTodosUsuarios", { email: usuarioEmail }).then(function(lista) {
-        if (!lista || lista.erro) { divBody.innerHTML = '<p>Erro ao carregar ou sem permissão.</p>'; return; }
+    
+    chamarAPI("listarTodosUsuarios", { email: usuarioEmail }).then(function(res) {
+        // CORREÇÃO: Verifica se res.usuarios existe
+        var lista = res.usuarios; 
+        
+        if (!lista || res.erro) { 
+            divBody.innerHTML = '<p style="text-align:center;">Erro ao carregar ou sem permissão.</p>'; 
+            return; 
+        }
+        
         divBody.innerHTML = '';
         var ul = document.createElement('div');
+        
         lista.forEach(function(u) {
             var item = document.createElement('div');
             item.className = 'item-usuario';
@@ -524,35 +652,40 @@ function editarUsuario(emailAlvo, nivelAtual) {
     if (novosPapeis.trim() === "") {
         confirmarAcao("Excluir Usuário", "Deseja remover " + emailAlvo + "?", function() {
             chamarAPI("excluirUsuario", { adminEmail: usuarioEmail, emailAlvo: emailAlvo }).then(function(r) {
-                alert(r.sucesso || r.erro); abrirGestaoUsuarios();
+                mostrarNotificacao(r.sucesso || r.erro, r.sucesso ? "sucesso" : "erro");
+                abrirGestaoUsuarios();
             });
         });
         return;
     }
     chamarAPI("salvarEdicaoUsuario", { adminEmail: usuarioEmail, emailAlvo: emailAlvo, novosPapeis: novosPapeis }).then(function(r) {
-        alert(r.sucesso || r.erro); abrirGestaoUsuarios();
+        mostrarNotificacao(r.sucesso || r.erro, r.sucesso ? "sucesso" : "erro");
+        abrirGestaoUsuarios();
     });
 }
 
 function processarAprovacaoCadastro(emailAlvo, nomeAlvo, idContainerRoles) {
     var divRoles = document.getElementById(idContainerRoles);
     var checkboxes = divRoles.querySelectorAll('input[type="checkbox"]:checked');
-    if (checkboxes.length === 0) return alert("Selecione pelo menos uma função.");
+    if (checkboxes.length === 0) return mostrarNotificacao("Selecione uma função.", "erro");
     var papeisSelecionados = Array.from(checkboxes).map(cb => cb.value).join(', ');
     
     confirmarAcao("Aprovar Acesso", 'Aprovar ' + nomeAlvo + ' como: ' + papeisSelecionados + '?', function() {
         chamarAPI("aprovarCadastro", { adminEmail: usuarioEmail, emailAlvo: emailAlvo, nomeAlvo: nomeAlvo, nivel: papeisSelecionados }).then(function(r) {
-           alert(r.sucesso || r.erro); carregarSolicitacoes();
+           mostrarNotificacao(r.sucesso || r.erro, r.sucesso ? "sucesso" : "erro");
+           carregarSolicitacoes();
         });
     });
 }
 
-// --- FUNÇÕES DE AÇÃO (ATUALIZADAS COM CONFIRMAÇÃO BONITA) ---
+// --- FUNÇÕES DE AÇÃO GERAIS ---
 function aprovarPedido(email, idTerritorio) {
     confirmarAcao("Designar Cartão", 'Designar ' + idTerritorio + ' para este publicador?', function() {
         document.getElementById('lista-solicitacoes').innerHTML = '<p style="text-align:center;">Processando...</p>';
         chamarAPI("aprovarPedidoTerritorio", { email: email, idTerritorio: idTerritorio }).then(function(r) {
-            alert(r.sucesso || r.erro); carregarSolicitacoes(); carregarSistema(); 
+            mostrarNotificacao(r.sucesso || r.erro, r.sucesso ? "sucesso" : "erro");
+            carregarSolicitacoes(); 
+            carregarSistema(); 
         });
     });
 }
@@ -561,7 +694,8 @@ function recusarPedido(email, info, tipo) {
     var motivo = prompt("Motivo da recusa:", "Indisponível");
     if (motivo === null) return; 
     chamarAPI("recusarSolicitacao", { email: email, info: info, tipo: tipo, motivo: motivo }).then(function(r) {
-        alert(r.sucesso || r.erro); carregarSolicitacoes();
+        mostrarNotificacao(r.sucesso || r.erro, r.sucesso ? "sucesso" : "erro");
+        carregarSolicitacoes();
     });
 }
 
@@ -569,20 +703,8 @@ function sugerirOutro(email, idAtual) {
     abrirSeletorTerritorio(function(novoID) {
         if (!novoID) return;
         chamarAPI("sugerirTrocaTerritorio", { email: email, idAtual: idAtual, novoID: novoID }).then(function(r) {
-            alert(r.sucesso || r.erro); carregarSolicitacoes();
-        });
-    });
-}
-
-function acionar(id, acao) {
-    // Texto personalizado
-    var texto = (acao === 'designar') ? 'Deseja designar este território?' : 'Deseja pedir este território?';
-    
-    confirmarAcao(acao.charAt(0).toUpperCase() + acao.slice(1), texto, function() {
-        document.getElementById('lista-territorios').style.opacity = '0.5';
-        chamarAPI("processarAcaoTerritorio", { id: id, tipoAcao: acao, email: usuarioEmail }).then(function(r) {
-              document.getElementById('lista-territorios').style.opacity = '1';
-              if (r.erro) alert(r.erro); else { alert(r.sucesso); carregarSistema(); }
+            mostrarNotificacao(r.sucesso || r.erro, r.sucesso ? "sucesso" : "erro");
+            carregarSolicitacoes();
         });
     });
 }
@@ -590,9 +712,13 @@ function acionar(id, acao) {
 function enviarSolicitacao() {
     var nome = document.getElementById('cad-nome').value;
     var tel = document.getElementById('cad-tel').value;
-    if (!nome || !tel) return alert("Preencha todos os campos.");
+    if (!nome || !tel) return mostrarNotificacao("Preencha todos os campos.", "erro");
     chamarAPI("solicitarCadastro", { nome: nome, tel: tel, email: usuarioEmail }).then(function(r) {
-       if(r.erro) alert(r.erro); else { alert(r.sucesso); location.reload(); }
+       if(r.erro) mostrarNotificacao(r.erro, "erro"); 
+       else { 
+           mostrarNotificacao(r.sucesso, "sucesso"); 
+           setTimeout(() => location.reload(), 1500); 
+       }
     });
 }
 
@@ -649,7 +775,7 @@ function abrirMapa(idTerritorio, nomeTerritorio) {
 function abrirDetalhesEndereco(numero, idTerritorio) {
       var enderecos = enderecosCache[idTerritorio];
       var info = territorioInfoCache[idTerritorio]; 
-      if (!enderecos || !info) return alert("Erro de dados. Tente recarregar.");
+      if (!enderecos || !info) return mostrarNotificacao("Erro de dados.", "erro");
       var end = enderecos[numero - 1]; 
       if (mapaUnico) { mapaUnico.remove(); mapaUnico = null; }
 
@@ -696,7 +822,7 @@ function adicionarBotaoCompartilhar(idTerritorio, nomeTerritorio, listaEnderecos
 }
 
 function compartilharDadosTerritorio(id, nome, enderecos) {
-    if (!enderecos || enderecos.length === 0) return alert("Sem dados.");
+    if (!enderecos || enderecos.length === 0) return mostrarNotificacao("Sem dados.", "erro");
     var linkRota = gerarLinkRota(enderecos);
     var textoLista = enderecos.map(function(end, index) { return '📍 *' + (index + 1) + '.* ' + end.rua + ', ' + (end.numero || 'S/N') + '\n   _Ref: ' + (end.referencia || '-') + '_'; }).join('\n\n');
     var mensagem = '🗺️ *Território ' + id + '* - ' + nome + '\n\n' + textoLista + '\n\n' + '🔗 *Ver todos no Mapa:*\n' + linkRota;
@@ -713,13 +839,6 @@ function gerarLinkRota(enderecos) {
     var baseUrl = "https://www.google.com/maps/dir/";
     var coordenadas = enderecos.map(function(e) { return e.lat + ',' + e.lng; }).join('/');
     return baseUrl + coordenadas;
-}
-
-function alternarTelaCheia() {
-    var mapaDiv = document.getElementById('leaflet-map-container');
-    if (mapaDiv.classList.contains('mapa-fullscreen')) { mapaDiv.classList.remove('mapa-fullscreen'); } 
-    else { mapaDiv.classList.add('mapa-fullscreen'); }
-    setTimeout(function() { if (mapaAtual) { mapaAtual.invalidateSize(); } }, 200);
 }
 
 function abrirSeletorTerritorio(cb) {
@@ -758,7 +877,6 @@ if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./service-
         const newWorker = reg.installing;
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            // Mostra o aviso
             let toast = document.getElementById('pwa-toast');
             toast.style.display = 'block';
             
@@ -782,7 +900,3 @@ if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./service-
 
 </body>
 </html>
-
-
-
-
