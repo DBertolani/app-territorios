@@ -1,10 +1,10 @@
 /* ==========================================================================
- * ARQUIVO: service-worker.js (Versão 2.0 - Corrigida)
+ * ARQUIVO: service-worker.js (Versão 3.0.0-final)
  * Descrição: Gerenciador de cache, proxy de rede e atualizador de versão.
  * ========================================================================== */
 
 // CONTROLE DE VERSÃO: Mude isso sempre que atualizar o HTML/CSS/JS
-const CACHE_VERSION = 'v2.0.1-territorios-release';
+const CACHE_VERSION = 'v3.0.0-final';
 const CACHE_STATIC = `static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `dynamic-${CACHE_VERSION}`;
 
@@ -13,7 +13,7 @@ const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json'
-  // Se tiver imagens de ícones, adicione aqui: './icon-192.png', etc.
+  // Adicione seus ícones aqui se necessário: './icon-192.png', etc.
 ];
 
 // 1. FASE DE INSTALAÇÃO
