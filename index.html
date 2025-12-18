@@ -187,7 +187,6 @@
         <div class="modal-header">
             <h3 style="margin:0">🔔 Solicitações</h3>
             <div style="display:flex; align-items:center;">
-                <button id="btn-gerir-users" class="icon-btn hidden" onclick="abrirGestaoUsuarios()" style="margin-right:10px;">
                     <span class="material-icons" style="color:#3498db">group</span>
                 </button>
                 <button class="btn-close" onclick="toggleModal('modal-admin')"><span class="material-icons">close</span></button>
@@ -223,12 +222,27 @@
     <div id="modal-perfil" class="modal-overlay hidden">
       <div class="modal-content">
         <div class="modal-header"><h3 style="margin:0">Meu Perfil</h3><button class="btn-close" onclick="toggleModal('modal-perfil')"><span class="material-icons">close</span></button></div>
+        
         <div class="modal-body" style="text-align:center;">
             <span class="material-icons" style="font-size: 60px; color:#ccc; margin-bottom:10px;">account_circle</span>
+            
             <h2 id="perfil-nome" style="margin:5px 0;">---</h2>
-            <p id="perfil-email" style="color:#666; margin-bottom:20px;">---</p>
+            <p id="perfil-email" style="color:#666; margin-bottom:5px;">---</p>
+            
+            <p style="margin:0 0 20px 0; color:#3498db; font-weight:bold;">
+                <span id="perfil-funcao">...</span>
+            </p>
+        
+            <div id="area-admin-panel" class="hidden" style="margin-bottom: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+                <h3 style="margin:0 0 10px 0; font-size: 1rem; color: #e67e22;">Administração</h3>
+                <button class="btn-designar" onclick="abrirGestaoUsuarios()" style="background-color: #e67e22; color: white;">
+                    <span class="material-icons">group</span> Gerenciar Usuários
+                </button>
+            </div>
+        
             <button class="btn-vermelho" onclick="fazerLogout()"><span class="material-icons">logout</span> Sair da Conta</button>
         </div>
+          
       </div>
     </div>
 
@@ -325,35 +339,40 @@ function processarLogin(r) {
 
   if (r.status === "APROVADO") {
     usuarioNome = r.nome || "Publicador";
-    var usuarioNivel = r.nivel || "Publicador";
+    var usuarioNivel = r.nivel || "Publicador"; // Ex: "Admin, Publicador"
     
     localStorage.setItem('app_territorios_email', usuarioEmail);
     localStorage.setItem('app_territorios_nivel', usuarioNivel);
 
+    // 1. Preenche dados visuais do Perfil
     document.getElementById('perfil-nome').innerText = usuarioNome;
     document.getElementById('perfil-email').innerText = usuarioEmail;
-    
+    document.getElementById('perfil-funcao').innerText = usuarioNivel; // Mostra o texto completo
+
+    // 2. Atualiza Header
     if(document.getElementById('header-nome-usuario')) {
         document.getElementById('header-nome-usuario').innerText = usuarioNome.split(' ')[0];
     }
+
+    // 3. Lógica do Botão Admin (Gerenciar Usuários)
+    var roles = usuarioNivel.toLowerCase();
+    var painelAdmin = document.getElementById('area-admin-panel');
     
-    var niveisHTML = usuarioNivel.split(',').map(function(n) {
-        return '<span style="background:#eef2f7; color:#3498db; padding:4px 8px; border-radius:15px; font-size:0.8rem; margin:2px;">' + n.trim() + '</span>';
-    }).join(' ');
-    
-    var containerPerfil = document.querySelector('#modal-perfil .modal-body');
-    var divExistente = document.getElementById('perfil-cargos-display');
-    if(divExistente) divExistente.remove();
-    var divCargos = document.createElement('div');
-    divCargos.id = 'perfil-cargos-display';
-    divCargos.style.marginBottom = "20px";
-    divCargos.innerHTML = niveisHTML;
-    containerPerfil.insertBefore(divCargos, containerPerfil.lastElementChild);
+    // Verifica se tem permissão (SINTAXE SEGURA: tudo na mesma linha)
+    if (roles.includes('admin') || roles.includes('dirigente') || roles.includes('servo')) {
+        painelAdmin.classList.remove('hidden');
+        // Mostra o sino de notificações também
+        document.getElementById('btn-admin-bell').classList.remove('hidden');
+    } else {
+        painelAdmin.classList.add('hidden');
+        document.getElementById('btn-admin-bell').classList.add('hidden');
+    }
 
     document.getElementById('app-header').classList.remove('hidden');
     document.getElementById('app-footer').classList.remove('hidden');
     document.getElementById('tela-sistema').classList.remove('hidden');
     carregarSistema();
+
   } else if (r.status === "PENDENTE") {
     document.getElementById('tela-pendente').classList.remove('hidden');
   } else {
@@ -377,11 +396,7 @@ function renderizarDados(resultado) {
   // Lógica do Sininho e Botão de Gestão de Usuários
   if (isAdmin) {
     document.getElementById('btn-admin-bell').classList.remove('hidden');
-    // Mostra o botão de Gerenciar Usuários
-    if(document.getElementById('btn-gerir-users')) {
-        document.getElementById('btn-gerir-users').classList.remove('hidden');
-    }
-  }
+      }
 
   var divLista = document.getElementById('lista-territorios');
   divLista.innerHTML = '';
@@ -801,4 +816,5 @@ if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./service-
 
 </body>
 </html>
+
 
