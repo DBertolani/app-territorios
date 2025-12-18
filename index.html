@@ -765,129 +765,40 @@ function filtrarListaSelecao(texto) {
 }
 if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./service-worker.js'); }
 </script>
+<div id="pwa-toast" style="position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 12px 24px; border-radius: 8px; display: none; z-index: 9999; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-family: sans-serif;">
+    Nova versão disponível. <button id="pwa-refresh" style="margin-left:10px; background:none; border:none; color: #4CAF50; font-weight:bold; cursor:pointer;">ATUALIZAR</button>
+</div>
+
 <script>
-  (function() {
-    'use strict';
-    
-    // 1. Definição de Estilos e Criação de Elementos DOM Isolados
-    // Criamos os elementos via JS para garantir que nenhum CSS quebrado da página afete o aviso.
-    var toastId = 'pwa-update-toast-container';
-    if (document.getElementById(toastId)) return; // Previne múltiplas injeções
-
-    var toast = document.createElement('div');
-    toast.id = toastId;
-    
-    // Estilos inline para garantir a integridade visual (sem classes externas)
-    Object.assign(toast.style, {
-      position: 'fixed',
-      bottom: '20px',
-      right: '20px',
-      minWidth: '250px',
-      backgroundColor: '#323232', // Cor escura padrão Material Design
-      color: '#ffffff',
-      padding: '16px 24px',
-      borderRadius: '4px',
-      boxShadow: '0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12)',
-      display: 'none', // Oculto inicialmente
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      zIndex: '2147483647', // Z-Index máximo para sobrepor qualquer modal ou erro de layout
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-      fontSize: '14px',
-      lineHeight: '20px'
-    });
-
-    var message = document.createElement('span');
-    message.textContent = 'Nova versão disponível.';
-    message.style.marginRight = '20px';
-
-    var actionBtn = document.createElement('button');
-    actionBtn.textContent = 'ATUALIZAR';
-    Object.assign(actionBtn.style, {
-      background: 'none',
-      border: 'none',
-      color: '#ff4081', // Cor de destaque (accent color)
-      cursor: 'pointer',
-      padding: '0',
-      margin: '0',
-      fontWeight: '500',
-      letterSpacing: '0.0892857143em',
-      textTransform: 'uppercase',
-      fontSize: '14px'
-    });
-
-    // Efeito de hover simples
-    actionBtn.onmouseover = function() { this.style.backgroundColor = 'rgba(255, 64, 129, 0.08)'; };
-    actionBtn.onmouseout = function() { this.style.backgroundColor = 'transparent'; };
-
-    toast.appendChild(message);
-    toast.appendChild(actionBtn);
-    document.body.appendChild(toast);
-
-    // 2. Lógica de Registro e Monitoramento do Service Worker
-    if ('serviceWorker' in navigator) {
-      
-      // Handler para o reload da página quando o novo SW assumir
-      var refreshing = false;
-      navigator.serviceWorker.addEventListener('controllerchange', function() {
-        if (!refreshing) {
-          refreshing = true;
-          window.location.reload();
-        }
-      });
-
-      navigator.serviceWorker.register('/sw.js').then(function(reg) {
-        // Cenário A: O SW já está esperando (atualização baixada em visita anterior)
-        if (reg.waiting) {
-          showUpdateNotification(reg.waiting);
-          return;
-        }
-
-        // Cenário B: O SW está instalando agora
-        if (reg.installing) {
-          trackInstalling(reg.installing);
-          return;
-        }
-
-        // Cenário C: Monitorar novas atualizações futuras
-        reg.addEventListener('updatefound', function() {
-          trackInstalling(reg.installing);
-        });
-
-      }).catch(function(err) {
-        console.error('Falha no registro do Service Worker:', err);
-      });
-    }
-
-    function trackInstalling(worker) {
-      worker.addEventListener('statechange', function() {
-        if (worker.state === 'installed') {
-          if (navigator.serviceWorker.controller) {
-            // Nova atualização disponível e instalada (aguardando ativação)
-            showUpdateNotification(worker);
-          } else {
-            // Conteúdo cacheados para uso offline (primeira instalação)
-            console.log('App pronto para uso offline!');
+  if ('serviceWorker' in navigator) {
+    // Note o ponto antes da barra: ./service-worker.js
+    navigator.serviceWorker.register('./service-worker.js').then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // Mostra o aviso
+            let toast = document.getElementById('pwa-toast');
+            toast.style.display = 'block';
+            
+            document.getElementById('pwa-refresh').onclick = () => {
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+              toast.style.display = 'none';
+            };
           }
-        }
+        });
       });
-    }
-
-    function showUpdateNotification(worker) {
-      toast.style.display = 'flex';
-      
-      actionBtn.onclick = function() {
-        // Envia mensagem para o SW executar skipWaiting()
-        worker.postMessage({ action: 'skipWaiting' });
-        // Feedback visual
-        actionBtn.disabled = true;
-        actionBtn.textContent = 'ATUALIZANDO...';
-      };
-    }
-  })();
+    });
+    
+    let refreshing;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      window.location.reload();
+      refreshing = true;
+    });
+  }
 </script>
-
 
 </body>
 </html>
+
