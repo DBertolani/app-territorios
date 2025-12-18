@@ -1,40 +1,91 @@
-const CACHE_NAME = 'territorios-v1';
-const ASSETS_TO_CACHE = [
+/* ==========================================================================
+ * ARQUIVO: service-worker.js (Versão 2.0 - Corrigida)
+ * Descrição: Gerenciador de cache, proxy de rede e atualizador de versão.
+ * ========================================================================== */
+
+// CONTROLE DE VERSÃO: Mude isso sempre que atualizar o HTML/CSS/JS
+const CACHE_VERSION = 'v2.0.1-territorios-release';
+const CACHE_STATIC = `static-${CACHE_VERSION}`;
+const CACHE_DYNAMIC = `dynamic-${CACHE_VERSION}`;
+
+// ATIVOS CRÍTICOS: Arquivos que devem funcionar offline imediatamente
+const STATIC_ASSETS = [
   './',
   './index.html',
-  './manifest.json',
-  'https://fonts.googleapis.com/icon?family=Material+Icons',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+  './manifest.json'
+  // Se tiver imagens de ícones, adicione aqui: './icon-192.png', etc.
 ];
 
-// Instalação: Guarda os ficheiros na "caixa" (Cache)
+// 1. FASE DE INSTALAÇÃO
 self.addEventListener('install', (event) => {
+  console.log('[SW] Instalando versão:', CACHE_VERSION);
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
+    caches.open(CACHE_STATIC)
+      .then((cache) => {
+        console.log('[SW] Pre-caching App Shell');
+        return cache.addAll(STATIC_ASSETS);
+      })
+      .then(() => self.skipWaiting()) // Força o SW a entrar em estado de espera
   );
 });
 
-// Ativação: Limpa caches antigas se houver atualização
+// 2. FASE DE ATIVAÇÃO (Limpeza de cache antigo)
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Ativando e limpando caches antigos...');
   event.waitUntil(
     caches.keys().then((keyList) => {
       return Promise.all(keyList.map((key) => {
-        if (key !== CACHE_NAME) {
+        if (key !== CACHE_STATIC && key !== CACHE_DYNAMIC) {
+          console.log('[SW] Removendo cache obsoleto:', key);
           return caches.delete(key);
         }
       }));
     })
   );
+  return self.clients.claim();
 });
 
-// Interceção: Quando o utilizador pede algo, tenta servir da cache primeiro
+// 3. INTERCEPTAÇÃO DE REDE (FETCH)
 self.addEventListener('fetch', (event) => {
+  const requestUrl = new URL(event.request.url);
+
+  // ESTRATÉGIA A: NETWORK ONLY (Ignora cache para API do Google Apps Script)
+  if (requestUrl.href.includes('script.google.com') || event.request.method === 'POST') {
+    return; 
+  }
+
+  // ESTRATÉGIA B: STALE-WHILE-REVALIDATE (Para o site em si)
+  // Tenta servir o cache rápido, mas busca atualização no fundo
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+    caches.match(event.request).then((cachedResponse) => {
+      
+      const networkFetch = fetch(event.request)
+        .then((networkResponse) => {
+          // Verifica se a resposta é válida
+          if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+            return networkResponse;
+          }
+          // Atualiza o cache dinâmico com a nova versão
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_STATIC).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+          return networkResponse;
+        })
+        .catch((err) => {
+          console.warn('[SW] Fetch falhou, tentando offline:', err);
+        });
+
+      // Retorna o que tiver no cache, ou espera a rede se não tiver nada
+      return cachedResponse || networkFetch;
     })
   );
+});
+
+// 4. MENSAGERIA PARA ATUALIZAÇÃO (SKIP WAITING)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('[SW] Atualização forçada pelo usuário.');
+    self.skipWaiting();
+  }
 });
