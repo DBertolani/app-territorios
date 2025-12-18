@@ -13,124 +13,92 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <style>
-        /* --- ESTILOS BASE --- */
+<style>
+        /* --- 1. BASE & LAYOUT --- */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding-top: 70px; padding-bottom: 80px; font-size: 16px; }
+        .container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; padding: 0 15px; max-width: 1200px; margin: 0 auto; }
+        .tela-central { max-width: 90%; margin: 20px auto; background: white; padding: 25px; border-radius: 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .hidden { display: none !important; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; background: white; }
+
+        /* --- 2. HEADER & FOOTER --- */
         .app-header { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); z-index: 1000; }
-        
         .app-title { font-size: 1.2rem; font-weight: 700; color: #333; display: flex; align-items: center; gap: 8px; }
-        
+        .app-footer { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; background: none; border: none; color: #999; font-size: 0.75rem; gap: 2px; padding: 0; margin: 0; width: auto; }
+        .nav-item.active { color: #3498db; }
+        .nav-item .material-icons { font-size: 24px; }
         .icon-btn { background: none; border: none; cursor: pointer; position: relative; color: #555; padding: 5px; }
         .badge { position: absolute; top: 0; right: 0; background: #e74c3c; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; }
-        .container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; padding: 0 15px; max-width: 1200px; margin: 0 auto; }
+
+        /* --- 3. CARTÕES & STATUS --- */
         .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: left; border-left: 5px solid #ccc; }
         .card h3 { margin: 0 0 5px 0; color: #333; font-size: 1.1rem; font-weight: 700; }
         .card p { margin: 3px 0; color: #666; font-size: 0.95rem; }
         .status-Livre { border-left-color: #27ae60; }
         .status-Ocupado { border-left-color: #e74c3c; opacity: 0.9; }
         .status-Meu { border-left-color: #3498db; background-color: #f0f8ff; border: 2px solid #3498db; }
+
+        /* --- 4. BOTÕES --- */
         button { cursor: pointer; padding: 12px; border: none; border-radius: 8px; font-weight: bold; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1rem; margin-top: 10px; transition: transform 0.1s; }
         button:active { transform: scale(0.98); }
-        .btn-pedir { background-color: #27ae60; color: white; }
+        .btn-pedir, .btn-verde { background-color: #27ae60; color: white; }
         .btn-designar { background-color: #f39c12; color: white; }
         .btn-desabilitado { background-color: #eee; color: #aaa; }
         .btn-azul { background-color: #3498db; color: white; }
         .btn-vermelho { background-color: #fff0f0; color: #e74c3c; border: 1px solid #ffcccc; }
-        .btn-verde { background-color: #27ae60; color: white; }
-        
-        /* --- MODAIS --- */
+        .btn-close { background: #eee; border: none; border-radius: 50%; width: 30px; height: 30px; color: #333; padding: 0 !important; margin: 0 !important; }
+
+        /* --- 5. MODAIS (Geral e Correções de Camadas) --- */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; justify-content: center; align-items: stretch; padding: 10px 0; }
-        .modal-content { 
-            background: #fff; 
-            width: 95%; 
-            max-width: 720px; 
-            border-radius: 16px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
-            display: flex; 
-            flex-direction: column; 
-            max-height: calc(100vh - 40px); 
-            overflow: hidden; 
-            padding: 0; 
-        }
+        .modal-content { background: #fff; width: 95%; max-width: 720px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: calc(100vh - 40px); overflow: hidden; padding: 0; }
         .modal-header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid #eee; }
-        .modal-body { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 20px; 
-        }
-        .btn-close { background: #eee; border: none; border-radius: 50%; width: 30px; height: 30px; color: #333; padding: 0 !important; margin: 0 !important; display: flex; align-items: center; justify-content: center; }
+        .modal-body { flex: 1; overflow-y: auto; padding: 20px; }
         
-        /* MODAL DE CONFIRMAÇÃO */
-        #modal-confirmacao .modal-content { max-height: auto; height: auto; align-self: center; }
-        #modal-confirmacao h3 { margin-top: 0; color: #333; }
-        #modal-confirmacao p { color: #666; font-size: 1rem; margin-bottom: 20px; }
-        .acoes-confirmacao { display: flex; gap: 10px; }
+        /* Ajustes Específicos de Z-Index e Layout */
+        #modal-confirmacao { z-index: 3000; }
+        #modal-confirmacao .modal-content { max-height: auto; height: auto; align-self: center; padding: 20px; max-width: 350px; }
+        #modal-endereco .modal-content { padding: 20px !important; }
+        #modal-users { z-index: 2100 !important; } /* Fica acima do perfil */
+        #modal-users .modal-content { max-height: 85vh; }
 
-        /* OUTROS ESTILOS */
-        #modal-mapa .modal-content > div:first-child p { margin: 3px 0 !important; font-size: 1rem !important; }
-        #modal-endereco .modal-content div:first-child { margin-top: 5px; }
-        .card-solicitacao { background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 10px; text-align: left; }
-        select { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; margin: 5px 0; background: white;}
-        
-        .app-footer { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; background: none; border: none; color: #999; font-size: 0.75rem; gap: 2px; padding: 0; margin: 0; width: auto; }
-        .nav-item.active { color: #3498db; }
-        .nav-item .material-icons { font-size: 24px; }
-        
-        .tela-central { max-width: 90%; margin: 20px auto; background: white; padding: 25px; border-radius: 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; }
-        .hidden { display: none !important; }
-        
-        @media (max-width: 900px) { .container { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px; padding: 0 10px; } .card { padding: 10px; border-left-width: 4px; display: flex; flex-direction: column; justify-content: space-between; } .card h3 { font-size: 0.95rem; } .card p { font-size: 0.8rem; } button { padding: 10px !important; font-size: 0.9rem !important; margin-top: 5px; } }
-        
-        /* MAPAS */
-        #conteudo-mapa { width: 100%; border-radius: 8px; z-index: 1; }
-        .leaflet-popup-content { font-family: 'Segoe UI', sans-serif; font-size: 14px; text-align: center;}
-        .lista-enderecos-cartao { margin-top: 15px; padding: 0; list-style: none; text-align: left; border-top: 1px solid #eee; padding-top: 10px; }
-        .lista-enderecos-cartao li { background: #fff; border: 1px solid #ddd; border-left: 5px solid #3498db; border-radius: 6px; padding: 12px 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; line-height: normal; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .lista-enderecos-cartao .numero { font-weight: bold; font-size: 1.2rem; color: #3498db; min-width: 30px; text-align: center; flex-shrink: 0; }
-        .lista-enderecos-cartao li > div { display: flex; flex-direction: column; gap: 1px; flex-grow: 1; }
-        .endereco-principal { font-size: 0.95rem; font-weight: bold; line-height: 1.3; margin: 0; }
-        .endereco-ref { color: #888; font-size: 0.8rem; line-height: 1.2; margin: 0; margin-top: 2px; }
-        .modal-content button { margin-top: 8px !important; margin-bottom: 8px !important; }
-        .modal-content button:last-child { margin-bottom: 0px !important; }
-        #modal-endereco .modal-content { padding: 20px 20px !important; }
-        #modal-endereco .modal-content div { line-height: 1.5; margin-bottom: 5px; font-size: 1rem; }
-        #detalhes-endereco-titulo { margin-bottom: 15px; font-size: 1.2rem; color: #333; }
-        
-        #btn-entrar-fullscreen { position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; border: none; border-radius: 4px; width: 32px; height: 32px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; color: #333; cursor: pointer; }
-        .mapa-fullscreen { position: fixed !important; top: 0; left: 0; width: 100vw !important; height: 100vh !important; z-index: 9999 !important; background: white; border-radius: 0 !important; }
-        #btn-sair-fullscreen { display: none; position: fixed; top: 20px; right: 20px; z-index: 10000; background: white; border: none; border-radius: 50%; width: 45px; height: 45px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); align-items: center; justify-content: center; color: #c00; cursor: pointer; }
-        .mapa-fullscreen ~ #btn-sair-fullscreen { display: flex !important; }
-        .mapa-fullscreen ~ #btn-entrar-fullscreen { display: none !important; }
-        
-        /* SELEÇÃO E GESTÃO */
-        .lista-selecao-itens { list-style: none; padding: 0; margin: 0; }
-        .item-selecao { background: white; border: 1px solid #eee; margin-bottom: 8px; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; }
-        .item-selecao:hover { background-color: #f9f9f9; border-color: #ccc; }
-        .badge-status { color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
-
-        .card-aprovacao { background: white; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid #3498db; margin-bottom: 10px; overflow: hidden; }
-        .aprovacao-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-        .aprovacao-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-        .aprovacao-resumo { padding: 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #fff; transition: background 0.2s; }
-        .aprovacao-resumo:active { background-color: #f5f5f5; }
-        .aprovacao-detalhes { padding: 0 15px 15px 15px; display: none; background: #fff; border-top: 1px solid #f0f0f0; }
-        .aprovacao-detalhes.aberto { display: block; animation: slideDown 0.3s ease; }
-        .aprovacao-info h4 { margin: 0; font-size: 1rem; color: #333; }
-        .aprovacao-info p { margin: 2px 0 0 0; font-size: 0.85rem; color: #666; }
-
-        .item-usuario { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        /* --- 6. LISTAS, GESTÃO & ANIMAÇÕES --- */
+        .card-solicitacao, .item-usuario { background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 10px; }
+        .item-usuario { background: white; display: flex; justify-content: space-between; align-items: center; padding: 15px; }
         .tags-roles span { background: #eef2f7; color: #3498db; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; }
-
+        
+        /* Aprovações */
+        .card-aprovacao { background: white; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid #3498db; margin-bottom: 10px; overflow: hidden; }
+        .aprovacao-resumo { padding: 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #fff; }
+        .aprovacao-detalhes { padding: 0 15px 15px; display: none; background: #fff; border-top: 1px solid #f0f0f0; }
+        .aprovacao-detalhes.aberto { display: block; animation: slideDown 0.3s ease; }
+        .lista-papeis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0; background: #f9f9f9; padding: 10px; border-radius: 8px; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
-        .lista-papeis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0; background: #f9f9f9; padding: 10px; border-radius: 8px; }
-        .papel-item { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #444; cursor: pointer; }
-        .papel-item input { width: 18px; height: 18px; margin: 0; cursor: pointer; }
-        .acoes-aprovacao { display: flex; gap: 10px; margin-top: 10px; }
+        /* Seleção */
+        .item-selecao { background: white; border: 1px solid #eee; margin-bottom: 8px; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .item-selecao:hover { background-color: #f9f9f9; border-color: #ccc; }
+
+        /* --- 7. MAPAS --- */
+        #conteudo-mapa { width: 100%; border-radius: 8px; z-index: 1; }
+        .lista-enderecos-cartao { margin-top: 15px; padding: 0; list-style: none; border-top: 1px solid #eee; padding-top: 10px; }
+        .lista-enderecos-cartao li { background: #fff; border: 1px solid #ddd; border-left: 5px solid #3498db; border-radius: 6px; padding: 12px 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .lista-enderecos-cartao .numero { font-weight: bold; font-size: 1.2rem; color: #3498db; min-width: 30px; text-align: center; }
+        .mapa-fullscreen { position: fixed !important; top: 0; left: 0; width: 100vw !important; height: 100vh !important; z-index: 9999 !important; background: white; }
+        #btn-entrar-fullscreen { position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); border-radius: 4px; }
+        .mapa-fullscreen ~ #btn-sair-fullscreen { display: flex !important; position: fixed; top: 20px; right: 20px; z-index: 10000; background: white; width: 45px; height: 45px; border-radius: 50%; box-shadow: 0 2px 10px rgba(0,0,0,0.3); align-items: center; justify-content: center; color: #c00; }
+
+        /* --- 8. RESPONSIVO --- */
+        @media (max-width: 900px) { 
+            .container { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px; padding: 0 10px; } 
+            .card { padding: 10px; border-left-width: 4px; display: flex; flex-direction: column; justify-content: space-between; } 
+            .card h3 { font-size: 0.95rem; } 
+            .card p { font-size: 0.8rem; } 
+            button { padding: 10px !important; font-size: 0.9rem !important; margin-top: 5px; } 
+        }
     </style>
+    
 </head>
 <body>
 
@@ -814,6 +782,7 @@ if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./service-
 
 </body>
 </html>
+
 
 
 
