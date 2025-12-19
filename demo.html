@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>DEMO - Territórios</title>
-    <meta name="description" content="VERSÃO DE TESTES - Sistema de territórios">
+    <meta name="description" content="VERSÃO DE DEMONSTRAÇÃO - Sistema de territórios">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -11,7 +11,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
-        /* --- TODOS OS ESTILOS ORIGINAIS MANTIDOS --- */
+        /* --- TODOS OS ESTILOS ORIGINAIS PRESERVADOS --- */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding-top: 70px; padding-bottom: 80px; font-size: 16px; }
         .container { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; padding: 0 15px; max-width: 1200px; margin: 0 auto; }
@@ -20,12 +20,12 @@
         .hidden { display: none !important; }
         input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; background: white; }
 
-        /* --- MARCADOR DE DEMO (MODIFICAÇÃO OBRIGATÓRIA) --- */
-        .app-header { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: #2c3e50; color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 1000; border-bottom: 3px solid #e67e22; }
+        /* MODIFICAÇÃO: Marcador Visual de Demo */
+        .app-header { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: #2c3e50; color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 1000; border-bottom: 4px solid #e67e22; }
         .app-header .app-title span { color: white !important; }
-        .demo-badge { background: #e67e22; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 5px; vertical-align: middle; }
+        .demo-tag { background: #e67e22; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle; font-weight: bold; }
 
-        .app-title { font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .app-title { font-size: 1.2rem; font-weight: 700; color: #333; display: flex; align-items: center; gap: 8px; }
         .app-footer { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
         .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; background: none; border: none; color: #999; font-size: 0.75rem; gap: 2px; padding: 0; margin: 0; width: auto; }
         .nav-item.active { color: #3498db; }
@@ -67,11 +67,11 @@
         .mapa-fullscreen { position: fixed !important; top: 0; left: 0; width: 100vw !important; height: 100vh !important; z-index: 9999 !important; background: white; border-radius: 0 !important; }
         .btn-fullscreen { position: absolute; top: 10px; right: 10px; z-index: 10000; background: white; border: none; width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.2); cursor: pointer; display: flex; align-items: center; justify-content: center; color: #333; }
 
-        /* Estilos Login Demo */
-        .btn-login-demo { margin-bottom: 15px; text-align: left; padding: 20px; border: 1px solid #ddd; display: flex; align-items: center; gap: 15px; }
-        .btn-login-demo .material-icons { font-size: 30px; }
-        .btn-login-demo div b { display: block; font-size: 1.1rem; }
-        .btn-login-demo div span { font-size: 0.8rem; color: #666; font-weight: normal; }
+        /* Estilo Botões Login Demo */
+        .btn-demo-login { margin-bottom: 12px; text-align: left; padding: 15px; border: 1px solid #ddd; display: flex; align-items: center; gap: 15px; background: #fff; }
+        .btn-demo-login:hover { background: #f9f9f9; border-color: #3498db; }
+        .btn-demo-login b { display: block; font-size: 1.1rem; color: #333; }
+        .btn-demo-login span { font-size: 0.8rem; color: #777; }
     </style>
 </head>
 <body>
@@ -82,7 +82,7 @@
       <div class="app-title">
         <span class="material-icons">map</span>
         <div style="display:flex; flex-direction:column; line-height:1;">
-            <span>Territórios <small class="demo-badge">DEMO</small></span>
+            <span>Territórios <small class="demo-tag">MODO TESTE</small></span>
             <span id="header-nome-usuario" style="font-size:0.7rem; color:#ccc; font-weight:normal;"></span>
         </div>
       </div>
@@ -95,23 +95,25 @@
     </header>
 
     <div id="tela-login" class="tela-central">
-      <h2 style="color: #e67e22;">🧪 Modo de Demonstração</h2>
-      <p>Bem-vindo! Escolha um perfil para testar as funcionalidades sem afetar dados reais.</p>
+      <h2 style="color: #e67e22; margin-top: 0;">🧪 Demonstração Interativa</h2>
+      <p>Teste o sistema sem afetar dados reais. Escolha como deseja acessar:</p>
       
-      <button class="btn-login-demo btn-azul" onclick="loginDemo('Admin')">
-        <span class="material-icons">admin_panel_settings</span>
-        <div><b>Acessar como Admin</b><span>Ver notificações, gerir usuários e territórios.</span></div>
+      <button class="btn-demo-login" onclick="loginDemo('Admin')">
+        <span class="material-icons" style="color:#e74c3c">admin_panel_settings</span>
+        <div><b>Acesso Administrador</b><span>Gerencia tudo: usuários, territórios e notificações.</span></div>
       </button>
 
-      <button class="btn-login-demo btn-pedir" onclick="loginDemo('Editor')">
-        <span class="material-icons">edit</span>
-        <div><b>Acessar como Editor</b><span>Capacidade de alterar nomes e bairros dos cartões.</span></div>
+      <button class="btn-demo-login" onclick="loginDemo('Editor')">
+        <span class="material-icons" style="color:#f39c12">edit</span>
+        <div><b>Acesso Editor</b><span>Pode gerenciar nomes de territórios e bairros.</span></div>
       </button>
 
-      <button class="btn-login-demo btn-designar" style="background:#34495e" onclick="loginDemo('Publicador')">
-        <span class="material-icons">person</span>
-        <div><b>Acessar como Publicador</b><span>Ver territórios e solicitar novos cartões.</span></div>
+      <button class="btn-demo-login" onclick="loginDemo('Publicador')">
+        <span class="material-icons" style="color:#27ae60">person</span>
+        <div><b>Acesso Publicador</b><span>Visualização padrão: pede e devolve seus cartões.</span></div>
       </button>
+      
+      <p style="font-size: 0.75rem; color: #999; margin-top: 20px;">Nota: Ao atualizar a página, os dados retornam ao estado inicial.</p>
     </div>
 
     <div id="tela-sistema" class="hidden">
@@ -149,14 +151,14 @@
                     <label><input type="checkbox" id="role-admin" value="Admin"> Admin</label>
                     <label><input type="checkbox" id="role-editor" value="Editor"> Editor</label>
                 </div>
-                <button class="btn-verde" onclick="salvarEdicaoViaModal()">Salvar Alterações</button>
+                <button class="btn-verde" onclick="salvarEdicaoViaModal()">Simular Salvar</button>
             </div>
         </div>
     </div>
 
     <div id="modal-designar" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 400px; align-self: center;">
-            <div class="modal-header"><h3>Designar Território</h3><button class="btn-close" onclick="toggleModal('modal-designar')"><span class="material-icons">close</span></button></div>
+            <div class="modal-header"><h3>Designar (Simulação)</h3><button class="btn-close" onclick="toggleModal('modal-designar')"><span class="material-icons">close</span></button></div>
             <div class="modal-body">
                 <p id="msg-designar-titulo">Para quem vai este cartão?</p>
                 <select id="sel-designar-pub"></select>
@@ -167,18 +169,18 @@
 
     <div id="modal-gestao-lista" class="modal-overlay hidden">
       <div class="modal-content">
-        <div class="modal-header"><h3>Editar Territórios</h3><button class="btn-close" onclick="toggleModal('modal-gestao-lista')"><span class="material-icons">close</span></button></div>
+        <div class="modal-header"><h3>Gestão de Territórios</h3><button class="btn-close" onclick="toggleModal('modal-gestao-lista')"><span class="material-icons">close</span></button></div>
         <div class="modal-body" id="lista-gestao-body"></div>
       </div>
     </div>
 
     <div id="modal-editar-territorio" class="modal-overlay hidden">
       <div class="modal-content" style="max-width:400px; align-self:center;">
-        <div class="modal-header"><h3>Editar Dados</h3><button class="btn-close" onclick="toggleModal('modal-editar-territorio')"><span class="material-icons">close</span></button></div>
+        <div class="modal-header"><h3>Editar Território</h3><button class="btn-close" onclick="toggleModal('modal-editar-territorio')"><span class="material-icons">close</span></button></div>
         <div class="modal-body">
             <h4 id="edit-terr-id">---</h4>
             <input type="text" id="edit-terr-nome">
-            <button class="btn-verde" onclick="salvarEdicaoTerritorio()">Salvar</button>
+            <button class="btn-verde" onclick="salvarEdicaoTerritorio()">Salvar Localmente</button>
         </div>
       </div>
     </div>
@@ -190,11 +192,11 @@
             <span class="material-icons" style="font-size: 60px; color:#ccc;">account_circle</span>
             <h2 id="perfil-nome">---</h2>
             <p id="perfil-email">---</p>
-            <p id="perfil-funcao" style="font-weight:bold; color:#3498db;">...</p>
+            <p id="perfil-funcao" style="font-weight:bold; color:#3498db;"></p>
             <div id="area-admin-panel" class="hidden">
                 <button class="btn-designar" onclick="abrirGestaoUsuarios()"><span class="material-icons">group</span> Gerenciar Usuários</button>
             </div>
-            <button class="btn-vermelho" onclick="fazerLogout()"><span class="material-icons">logout</span> Sair da Demo</button>
+            <button class="btn-vermelho" onclick="fazerLogout()"><span class="material-icons">logout</span> Encerrar Demo</button>
         </div>
       </div>
     </div>
@@ -211,6 +213,8 @@
         <div class="modal-header"><h3>Endereço</h3><button class="btn-close" onclick="toggleModal('modal-endereco')"><span class="material-icons">close</span></button></div>
         <div class="modal-body">
             <div style="text-align:left;">
+                <p><strong>Cidade:</strong> Cidade Demo</p>
+                <p><strong>Bairro:</strong> Bairro Exemplo</p>
                 <p><strong>Rua:</strong> <span id="detalhes-rua">---</span></p>
                 <p><strong>Número:</strong> <span id="detalhes-numero">---</span></p>
                 <p><strong>GPS:</strong> <span id="detalhes-gps">---</span></p>
@@ -223,35 +227,33 @@
 
 <script>
 // ============================================
-// 🧪 CONFIGURAÇÃO DO MOCK (SIMULAÇÃO)
+// 🧪 ENGINE DE SIMULAÇÃO (MOCK DATA)
 // ============================================
 
 const mockDados = {
     usuarios: [
-        { email: "admin@demo.com", nome: "Carlos Admin", nivel: "Admin, Publicador" },
+        { email: "admin@demo.com", nome: "Carlos Administrador", nivel: "Admin, Publicador" },
         { email: "editor@demo.com", nome: "Ana Editora", nivel: "Editor, Publicador" },
         { email: "pub@demo.com", nome: "José Publicador", nivel: "Publicador" },
-        { email: "maria@demo.com", nome: "Maria Silva", nivel: "Publicador" }
+        { email: "maria@demo.com", nome: "Maria Publicadora", nivel: "Publicador" }
     ],
     territorios: [
-        { id: "TERR-001", nome: "Centro - Setor A", status: "Livre", responsavel: "", dataSaida: "", podeGerenciar: true, podeAbrir: true },
-        { id: "TERR-002", nome: "Bairro Novo", status: "Ocupado", responsavel: "Maria Silva", dataSaida: "15/12/2025", podeGerenciar: true, podeAbrir: true },
-        { id: "TERR-003", nome: "Vila Rural", status: "Livre", responsavel: "", dataSaida: "", podeGerenciar: true, podeAbrir: true },
-        { id: "TERR-004", nome: "Industrial", status: "Ocupado", responsavel: "José Publicador", dataSaida: "18/12/2025", podeGerenciar: true, podeAbrir: true }
+        { id: "TERR-001", nome: "Centro - Setor Norte", status: "Livre", responsavel: "", dataSaida: "", podeGerenciar: true, podeAbrir: true },
+        { id: "TERR-002", nome: "Bairro Horizonte", status: "Ocupado", responsavel: "Maria Publicadora", dataSaida: "10/12/2025", podeGerenciar: true, podeAbrir: true },
+        { id: "TERR-003", nome: "Vila Esperança", status: "Livre", responsavel: "", dataSaida: "", podeGerenciar: true, podeAbrir: true },
+        { id: "TERR-004", nome: "Parque Industrial", status: "Ocupado", responsavel: "José Publicador", dataSaida: "15/12/2025", podeGerenciar: true, podeAbrir: true }
     ],
     solicitacoes: [
-        { data: "19/12/2025", nome: "Maria Silva", email: "maria@demo.com", info: "TERR-003", tipo: "TERRITORIO" }
+        { data: "18/12/2025", nome: "José Publicador", email: "pub@demo.com", info: "TERR-003", tipo: "TERRITORIO" }
     ]
 };
 
-var sessaoUsuario = null;
+var sessao = null; // Guardará o usuário logado na demo
 
-// --- FUNÇÃO chameAPI MOCKADA (CIRÚRGICA) ---
+// --- FUNÇÃO chameAPI MOCKADA (SUBSTITUIÇÃO CIRÚRGICA) ---
 async function chamarAPI(acao, dados = {}) {
-    console.log("[Demo API] Chamada:", acao, dados);
-    
-    // Simula atraso de rede
-    await new Promise(r => setTimeout(r, 600));
+    console.log("[Demo] API Call:", acao, dados);
+    await new Promise(r => setTimeout(r, 600)); // Simula latência de rede
 
     switch(acao) {
         case "verificarLogin":
@@ -259,12 +261,12 @@ async function chamarAPI(acao, dados = {}) {
             return user ? { status: "APROVADO", ...user } : { status: "ERRO" };
         
         case "buscarTerritorios":
-            // Ajusta isMeu dinamicamente para a demo
+            // Ajusta "isMeu" com base na sessão demo
             const mapas = mockDados.territorios.map(t => ({
                 ...t,
-                isMeu: t.responsavel === sessaoUsuario.nome
+                isMeu: t.responsavel === sessao.nome
             }));
-            return { mapas: mapas, roles: { admin: sessaoUsuario.nivel.includes("Admin"), editor: sessaoUsuario.nivel.includes("Editor") } };
+            return { mapas: mapas, roles: { admin: sessao.nivel.includes("Admin"), editor: sessao.nivel.includes("Editor") } };
 
         case "listarTodosUsuarios":
             return { usuarios: mockDados.usuarios };
@@ -277,43 +279,43 @@ async function chamarAPI(acao, dados = {}) {
 
         case "buscarEnderecosPorTerritorio":
             return { 
-                cidade: "Cidade Exemplo", 
+                cidade: "Cidade Demo", 
                 enderecos: [
-                    { rua: "Rua das Flores", numero: "123", lat: -21.216, lng: -41.887 },
-                    { rua: "Av. Principal", numero: "500", lat: -21.218, lng: -41.889 }
+                    { rua: "Rua do Teste", numero: "100", lat: -21.216, lng: -41.887 },
+                    { rua: "Av. da Simulação", numero: "200", lat: -21.218, lng: -41.889 }
                 ] 
             };
 
         case "processarAcaoTerritorio":
-            const terr = mockDados.territorios.find(t => t.id === dados.id);
+            const item = mockDados.territorios.find(t => t.id === dados.id);
             if(dados.tipoAcao === "pedir") {
-                terr.status = "Ocupado";
-                terr.responsavel = sessaoUsuario.nome;
-                terr.dataSaida = "Hoje";
+                item.status = "Ocupado";
+                item.responsavel = sessao.nome;
+                item.dataSaida = "Hoje";
+            }
+            if(dados.tipoAcao === "designar") {
+                const alvo = mockDados.usuarios.find(u => u.email === dados.email);
+                item.status = "Ocupado";
+                item.responsavel = alvo ? alvo.nome : dados.email;
+                item.dataSaida = "Hoje";
             }
             return { sucesso: "Ação simulada com sucesso!" };
 
         default:
-            return { sucesso: "Operação demo concluída." };
+            return { sucesso: "OK" };
     }
 }
 
 // --- LÓGICA DE LOGIN DEMO ---
 function loginDemo(perfil) {
-    let emailFake = "";
-    if(perfil === 'Admin') emailFake = "admin@demo.com";
-    if(perfil === 'Editor') emailFake = "editor@demo.com";
-    if(perfil === 'Publicador') emailFake = "pub@demo.com";
-
+    let emailFake = perfil === 'Admin' ? "admin@demo.com" : (perfil === 'Editor' ? "editor@demo.com" : "pub@demo.com");
     chamarAPI("verificarLogin", { email: emailFake }).then(r => {
-        sessaoUsuario = r;
-        usuarioEmail = r.email;
-        usuarioNome = r.nome;
+        sessao = r;
         processarLogin(r);
     });
 }
 
-// --- FUNÇÕES DE UI (CÓPIA DO ORIGINAL) ---
+// --- FUNÇÕES DE UI (FIEIS AO ORIGINAL) ---
 
 function mostrarNotificacao(msg, tipo = "sucesso") {
     const container = document.getElementById('toast-container');
@@ -346,7 +348,7 @@ function processarLogin(r) {
 function carregarSistema() {
     document.getElementById('lista-territorios').innerHTML = '<p style="text-align:center;">Carregando Demo...</p>';
     chamarAPI("buscarTerritorios").then(renderizarDados);
-    if(sessaoUsuario.nivel.includes("Admin")) carregarSolicitacoes();
+    if(sessao.nivel.includes("Admin")) carregarSolicitacoes();
 }
 
 function renderizarDados(resultado) {
@@ -359,9 +361,12 @@ function renderizarDados(resultado) {
             <h3>${t.id}</h3>
             <p><strong>${t.nome}</strong></p>
             <p>${t.status} ${t.isMeu ? '(Você)' : ''}</p>
-            ${t.status === 'Ocupado' ? `<p style="font-size:0.8rem; color:#888;"><span class="material-icons" style="font-size:12px">person</span> ${t.responsavel}</p>` : ''}
-            <button class="${t.status === 'Livre' ? 'btn-pedir' : 'btn-desabilitado'}" ${t.status !== 'Livre' ? 'disabled' : ''} onclick="acionar('${t.id}', 'pedir')">
-                <span class="material-icons">${t.status === 'Livre' ? 'touch_app' : 'lock'}</span> ${t.status === 'Livre' ? 'Pedir' : 'Ocupado'}
+            ${t.status === 'Ocupado' ? `<div style="margin-top:8px; font-size:0.85rem; color:#555; display:flex; gap:10px; align-items:center;">
+                <span><i class="material-icons" style="font-size:14px; vertical-align:middle;">person</i> ${t.responsavel}</span>
+                <span><i class="material-icons" style="font-size:14px; vertical-align:middle;">event</i> ${t.dataSaida || '---'}</span>
+            </div>` : ''}
+            <button class="${t.podeGerenciar ? 'btn-designar' : (t.status === 'Livre' ? 'btn-pedir' : 'btn-desabilitado')}" ${!t.podeGerenciar && t.status !== 'Livre' ? 'disabled' : ''} onclick="acionar('${t.id}', '${t.podeGerenciar ? 'designar' : 'pedir'}')">
+                <span class="material-icons">${t.podeGerenciar ? 'assignment_ind' : (t.status === 'Livre' ? 'touch_app' : 'lock')}</span> ${t.podeGerenciar ? 'Designar' : (t.status === 'Livre' ? 'Pedir' : 'Ocupado')}
             </button>
             <button class="btn-azul" onclick="abrirMapa('${t.id}', '${t.nome}')"><span class="material-icons">map</span> Ver Mapa</button>
         `;
@@ -370,11 +375,30 @@ function renderizarDados(resultado) {
 }
 
 function acionar(id, acao) {
-    mostrarNotificacao("Processando na Demo...", "sucesso");
+    if(acao === 'designar') {
+        idTerritorioParaDesignar = id;
+        toggleModal('modal-designar');
+        carregarListaPublicadoresNoSelect();
+        return;
+    }
+    mostrarNotificacao("Solicitando cartão na demo...", "sucesso");
     chamarAPI("processarAcaoTerritorio", { id: id, tipoAcao: acao }).then(r => {
         mostrarNotificacao(r.sucesso);
         carregarSistema();
     });
+}
+
+var idTerritorioParaDesignar = null;
+function carregarListaPublicadoresNoSelect() {
+    const sel = document.getElementById('sel-designar-pub');
+    sel.innerHTML = mockDados.usuarios.map(u => `<option value="${u.email}">${u.nome}</option>`).join('');
+    document.getElementById('btn-confirmar-designacao').onclick = () => {
+        chamarAPI("processarAcaoTerritorio", { id: idTerritorioParaDesignar, tipoAcao: "designar", email: sel.value }).then(r => {
+            mostrarNotificacao(r.sucesso);
+            toggleModal('modal-designar');
+            carregarSistema();
+        });
+    };
 }
 
 var mapaAtual = null;
@@ -392,14 +416,16 @@ function abrirMapa(id, nome) {
     });
 }
 
-function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
+function toggleModal(id) { 
+    const el = document.getElementById(id);
+    if(el) el.classList.toggle('hidden'); 
+}
 function trocarAba(btn, tela) { 
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     btn.classList.add('active');
 }
 function fazerLogout() { location.reload(); }
 
-// --- OUTRAS FUNÇÕES DE GESTÃO (SIMULADAS) ---
 function abrirGestaoUsuarios() {
     toggleModal('modal-users');
     chamarAPI("listarTodosUsuarios").then(res => {
@@ -425,6 +451,9 @@ function abrirGestaoTerritorios() {
         body.innerHTML = res.map(t => `<div class="item-selecao" onclick="mostrarNotificacao('Edição disponível na demo','sucesso')"><b>${t.id}</b> - ${t.nome}</div>`).join('');
     });
 }
+
+function salvarEdicaoTerritorio() { mostrarNotificacao("Salvo na Demo"); toggleModal('modal-editar-territorio'); }
+function salvarEdicaoViaModal() { mostrarNotificacao("Salvo na Demo"); toggleModal('modal-editar-usuario'); }
 
 </script>
 </body>
