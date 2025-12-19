@@ -3,43 +3,43 @@
 <head>
     <meta charset="utf-8">
     <title>DEMO - Territórios</title>
-    <meta name="description" content="Versão de demonstração do sistema de territórios">
-    <meta name="theme-color" content="#e67e22"> <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="VERSÃO DE TESTES - Sistema de territórios">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
-        /* --- ESTILOS IDÊNTICOS AO ORIGINAL --- */
+        /* --- TODOS OS ESTILOS ORIGINAIS MANTIDOS --- */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #fff8e1; /* Fundo levemente amarelado para demo */ margin: 0; padding-top: 70px; padding-bottom: 80px; font-size: 16px; }
-        
-        .container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; padding: 0 15px; max-width: 1200px; margin: 0 auto; }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding-top: 70px; padding-bottom: 80px; font-size: 16px; }
+        .container { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; padding: 0 15px; max-width: 1200px; margin: 0 auto; }
+        @media (min-width: 768px) { .container { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); } }
         .tela-central { max-width: 90%; margin: 20px auto; background: white; padding: 25px; border-radius: 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .hidden { display: none !important; }
         input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; background: white; }
 
-        /* Header & Footer */
-        .app-header { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); z-index: 1000; border-bottom: 3px solid #e67e22; }
-        .app-title { font-size: 1.2rem; font-weight: 700; color: #333; display: flex; align-items: center; gap: 8px; }
+        /* --- MARCADOR DE DEMO (MODIFICAÇÃO OBRIGATÓRIA) --- */
+        .app-header { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: #2c3e50; color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 1000; border-bottom: 3px solid #e67e22; }
+        .app-header .app-title span { color: white !important; }
+        .demo-badge { background: #e67e22; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 5px; vertical-align: middle; }
+
+        .app-title { font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
         .app-footer { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
         .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; background: none; border: none; color: #999; font-size: 0.75rem; gap: 2px; padding: 0; margin: 0; width: auto; }
-        .nav-item.active { color: #e67e22; } /* Laranja na Demo */
+        .nav-item.active { color: #3498db; }
         .nav-item .material-icons { font-size: 24px; }
-        .icon-btn { background: none; border: none; cursor: pointer; position: relative; color: #555; padding: 5px; }
+        .icon-btn { background: none; border: none; cursor: pointer; position: relative; color: #fff; padding: 5px; }
         .badge { position: absolute; top: 0; right: 0; background: #e74c3c; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; }
 
-        /* Cards & Status */
-        .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: left; border-left: 5px solid #ccc; transition: transform 0.2s; }
-        .card:hover { transform: translateY(-2px); }
+        .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: left; border-left: 5px solid #ccc; }
         .card h3 { margin: 0 0 5px 0; color: #333; font-size: 1.1rem; font-weight: 700; }
         .card p { margin: 3px 0; color: #666; font-size: 0.95rem; }
         .status-Livre { border-left-color: #27ae60; }
         .status-Ocupado { border-left-color: #e74c3c; opacity: 0.9; }
         .status-Meu { border-left-color: #3498db; background-color: #f0f8ff; border: 2px solid #3498db; }
 
-        /* Botões */
         button { cursor: pointer; padding: 12px; border: none; border-radius: 8px; font-weight: bold; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1rem; margin-top: 10px; transition: transform 0.1s; }
         button:active { transform: scale(0.98); }
         .btn-pedir, .btn-verde { background-color: #27ae60; color: white; }
@@ -48,46 +48,30 @@
         .btn-azul { background-color: #3498db; color: white; }
         .btn-vermelho { background-color: #fff0f0; color: #e74c3c; border: 1px solid #ffcccc; }
         .btn-close { background: #eee; border: none; border-radius: 50%; width: 30px; height: 30px; color: #333; padding: 0 !important; margin: 0 !important; }
-        
-        /* Botões Específicos da Demo */
-        .btn-demo-admin { background-color: #8e44ad; color: white; margin-bottom: 10px; }
-        .btn-demo-editor { background-color: #2980b9; color: white; margin-bottom: 10px; }
-        .btn-demo-pub { background-color: #27ae60; color: white; margin-bottom: 10px; }
 
-        /* Modais */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; justify-content: center; align-items: stretch; padding: 10px 0; }
         .modal-content { background: #fff; width: 95%; max-width: 720px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: calc(100vh - 40px); overflow: hidden; padding: 0; }
         .modal-header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid #eee; }
         .modal-body { flex: 1; overflow-y: auto; padding: 20px; }
-        
-        /* Ajustes Z-Index */
-        #modal-confirmacao { z-index: 3000; }
-        #modal-confirmacao .modal-content { max-height: auto; height: auto; align-self: center; padding: 20px; max-width: 350px; }
-        #modal-endereco .modal-content { padding: 20px !important; }
         #modal-users, #modal-designar, #modal-editar-usuario, #modal-gestao-lista, #modal-editar-territorio { z-index: 2100 !important; } 
 
-        /* Toast */
         #toast-container { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 5000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; width: 90%; max-width: 400px; }
         .toast { background: #333; color: #fff; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(-20px); transition: all 0.3s ease; font-size: 0.95rem; text-align: center; pointer-events: auto; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .toast.visible { opacity: 1; transform: translateY(0); }
         .toast.sucesso { background-color: #27ae60; }
         .toast.erro { background-color: #e74c3c; }
 
-        /* Mapas */
-        #conteudo-mapa { width: 100%; border-radius: 8px; z-index: 1; position: relative; }
-        .lista-enderecos-cartao { margin-top: 15px; padding: 0; list-style: none; border-top: 1px solid #eee; padding-top: 10px; }
-        .lista-enderecos-cartao li { background: #fff; border: 1px solid #ddd; border-left: 5px solid #3498db; border-radius: 6px; padding: 12px 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .lista-enderecos-cartao .numero { font-weight: bold; font-size: 1.2rem; color: #3498db; min-width: 30px; text-align: center; }
+        .item-usuario { background: white; display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
+        .tags-roles span { background: #eef2f7; color: #3498db; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; }
+        
         .mapa-fullscreen { position: fixed !important; top: 0; left: 0; width: 100vw !important; height: 100vh !important; z-index: 9999 !important; background: white; border-radius: 0 !important; }
         .btn-fullscreen { position: absolute; top: 10px; right: 10px; z-index: 10000; background: white; border: none; width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.2); cursor: pointer; display: flex; align-items: center; justify-content: center; color: #333; }
 
-        /* Edição */
-        .checkbox-group { display: flex; flex-direction: column; gap: 10px; margin: 15px 0; }
-        .checkbox-group label { display: flex; align-items: center; gap: 10px; font-size: 1rem; cursor: pointer; padding: 10px; background: #f9f9f9; border-radius: 6px; }
-        .checkbox-group input { width: 20px; height: 20px; margin: 0; }
-        .item-selecao { background: white; border: 1px solid #eee; margin-bottom: 8px; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-
-        @media (max-width: 480px) { .container { grid-template-columns: 1fr; padding: 0 10px; } }
+        /* Estilos Login Demo */
+        .btn-login-demo { margin-bottom: 15px; text-align: left; padding: 20px; border: 1px solid #ddd; display: flex; align-items: center; gap: 15px; }
+        .btn-login-demo .material-icons { font-size: 30px; }
+        .btn-login-demo div b { display: block; font-size: 1.1rem; }
+        .btn-login-demo div span { font-size: 0.8rem; color: #666; font-weight: normal; }
     </style>
 </head>
 <body>
@@ -96,10 +80,10 @@
 
     <header class="app-header hidden" id="app-header">
       <div class="app-title">
-        <span class="material-icons" style="color:#e67e22">science</span>
+        <span class="material-icons">map</span>
         <div style="display:flex; flex-direction:column; line-height:1;">
-            <span>Territórios (DEMO)</span>
-            <span id="header-nome-usuario" style="font-size:0.7rem; color:#666; font-weight:normal;"></span>
+            <span>Territórios <small class="demo-badge">DEMO</small></span>
+            <span id="header-nome-usuario" style="font-size:0.7rem; color:#ccc; font-weight:normal;"></span>
         </div>
       </div>
       <div class="header-actions">
@@ -111,21 +95,23 @@
     </header>
 
     <div id="tela-login" class="tela-central">
-      <h2>🧪 Modo Demonstração</h2>
-      <p>Este ambiente é seguro para testes. Nenhuma alteração afeta o banco de dados real.</p>
-      <p style="margin-bottom:20px;">Escolha um perfil para testar:</p>
+      <h2 style="color: #e67e22;">🧪 Modo de Demonstração</h2>
+      <p>Bem-vindo! Escolha um perfil para testar as funcionalidades sem afetar dados reais.</p>
       
-      <button class="btn-demo-admin" onclick="loginDemo('admin')">
-          <span class="material-icons">admin_panel_settings</span> Testar como Admin/Servo
+      <button class="btn-login-demo btn-azul" onclick="loginDemo('Admin')">
+        <span class="material-icons">admin_panel_settings</span>
+        <div><b>Acessar como Admin</b><span>Ver notificações, gerir usuários e territórios.</span></div>
       </button>
-      <button class="btn-demo-editor" onclick="loginDemo('editor')">
-          <span class="material-icons">edit_note</span> Testar como Editor
+
+      <button class="btn-login-demo btn-pedir" onclick="loginDemo('Editor')">
+        <span class="material-icons">edit</span>
+        <div><b>Acessar como Editor</b><span>Capacidade de alterar nomes e bairros dos cartões.</span></div>
       </button>
-      <button class="btn-demo-pub" onclick="loginDemo('publicador')">
-          <span class="material-icons">person</span> Testar como Publicador
+
+      <button class="btn-login-demo btn-designar" style="background:#34495e" onclick="loginDemo('Publicador')">
+        <span class="material-icons">person</span>
+        <div><b>Acessar como Publicador</b><span>Ver territórios e solicitar novos cartões.</span></div>
       </button>
-      
-      <p style="font-size:0.8rem; color:#999; margin-top:20px;">Dados mockados. As alterações são locais.</p>
     </div>
 
     <div id="tela-sistema" class="hidden">
@@ -140,455 +126,305 @@
 
     <div id="modal-admin" class="modal-overlay hidden">
       <div class="modal-content">
-        <div class="modal-header"><h3 style="margin:0">🔔 Solicitações (Demo)</h3><button class="btn-close" onclick="toggleModal('modal-admin')"><span class="material-icons">close</span></button></div>
-        <div class="modal-body" id="lista-solicitacoes"><p style="text-align:center;">Carregando...</p></div>
-      </div>
-    </div>
-
-    <div id="modal-perfil" class="modal-overlay hidden">
-      <div class="modal-content">
-        <div class="modal-header"><h3 style="margin:0">Perfil Demo</h3><button class="btn-close" onclick="toggleModal('modal-perfil')"><span class="material-icons">close</span></button></div>
-        <div class="modal-body" style="text-align:center;">
-            <span class="material-icons" style="font-size: 60px; color:#ccc; margin-bottom:10px;">account_circle</span>
-            <h2 id="perfil-nome" style="margin:5px 0;">---</h2>
-            <p id="perfil-email" style="color:#666; margin-bottom:5px;">---</p>
-            <p style="margin:0 0 20px 0; color:#3498db; font-weight:bold;"><span id="perfil-funcao">...</span></p>
-            <div id="area-admin-panel" class="hidden" style="margin-bottom: 20px; border-top: 1px solid #eee; padding-top: 15px;">
-                <h3 style="margin:0 0 10px 0; font-size: 1rem; color: #e67e22;">Administração</h3>
-                <button class="btn-designar" onclick="abrirGestaoUsuarios()" style="background-color: #e67e22; color: white;"><span class="material-icons">group</span> Gerenciar Usuários</button>
-            </div>
-            <button class="btn-vermelho" onclick="fazerLogout()"><span class="material-icons">logout</span> Resetar Demo</button>
-        </div>
+        <div class="modal-header"><h3>🔔 Solicitações</h3><button class="btn-close" onclick="toggleModal('modal-admin')"><span class="material-icons">close</span></button></div>
+        <div class="modal-body" id="lista-solicitacoes"></div>
       </div>
     </div>
 
     <div id="modal-users" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div class="modal-header"><h3 style="margin:0">Gerenciar Usuários (Demo)</h3><button class="btn-close" onclick="toggleModal('modal-users')"><span class="material-icons">close</span></button></div>
-            <div class="modal-body" id="lista-users-body"><p>Carregando...</p></div>
-        </div>
+      <div class="modal-content">
+        <div class="modal-header"><h3>Gerenciar Usuários</h3><button class="btn-close" onclick="toggleModal('modal-users')"><span class="material-icons">close</span></button></div>
+        <div class="modal-body" id="lista-users-body"></div>
+      </div>
     </div>
 
     <div id="modal-editar-usuario" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 400px; align-self: center;">
-            <div class="modal-header"><h3 style="margin:0">Permissões (Demo)</h3><button class="btn-close" onclick="toggleModal('modal-editar-usuario')"><span class="material-icons">close</span></button></div>
+            <div class="modal-header"><h3>Editar Permissões</h3><button class="btn-close" onclick="toggleModal('modal-editar-usuario')"><span class="material-icons">close</span></button></div>
             <div class="modal-body">
-                <p id="edit-user-nome" style="font-weight: bold; margin-bottom: 10px;">---</p>
+                <p id="edit-user-nome" style="font-weight: bold;">---</p>
                 <div class="checkbox-group">
                     <label><input type="checkbox" id="role-publicador" value="Publicador"> Publicador</label>
                     <label><input type="checkbox" id="role-dirigente" value="Dirigente"> Dirigente</label>
                     <label><input type="checkbox" id="role-admin" value="Admin"> Admin</label>
                     <label><input type="checkbox" id="role-editor" value="Editor"> Editor</label>
                 </div>
-                <button class="btn-verde" onclick="salvarEdicaoViaModal()">Simular Salvar</button>
+                <button class="btn-verde" onclick="salvarEdicaoViaModal()">Salvar Alterações</button>
             </div>
         </div>
     </div>
 
     <div id="modal-designar" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 400px; align-self: center;">
-            <div class="modal-header"><h3 style="margin:0">Designar (Demo)</h3><button class="btn-close" onclick="toggleModal('modal-designar')"><span class="material-icons">close</span></button></div>
+            <div class="modal-header"><h3>Designar Território</h3><button class="btn-close" onclick="toggleModal('modal-designar')"><span class="material-icons">close</span></button></div>
             <div class="modal-body">
                 <p id="msg-designar-titulo">Para quem vai este cartão?</p>
-                <select id="sel-designar-pub"><option value="">Carregando...</option></select>
-                <button class="btn-designar" id="btn-confirmar-designacao">Confirmar (Mock)</button>
+                <select id="sel-designar-pub"></select>
+                <button class="btn-designar" id="btn-confirmar-designacao">Confirmar Designação</button>
             </div>
         </div>
     </div>
 
     <div id="modal-gestao-lista" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div class="modal-header"><h3 style="margin:0">Editar Territórios (Demo)</h3><button class="btn-close" onclick="toggleModal('modal-gestao-lista')"><span class="material-icons">close</span></button></div>
-            <div style="padding:10px; border-bottom:1px solid #eee;">
-                <input type="text" placeholder="Filtrar..." onkeyup="filtrarListaEdicao(this.value)" style="width:100%; padding:10px; border:1px solid #ccc;">
-            </div>
-            <div class="modal-body" id="lista-gestao-body"></div>
+      <div class="modal-content">
+        <div class="modal-header"><h3>Editar Territórios</h3><button class="btn-close" onclick="toggleModal('modal-gestao-lista')"><span class="material-icons">close</span></button></div>
+        <div class="modal-body" id="lista-gestao-body"></div>
+      </div>
+    </div>
+
+    <div id="modal-editar-territorio" class="modal-overlay hidden">
+      <div class="modal-content" style="max-width:400px; align-self:center;">
+        <div class="modal-header"><h3>Editar Dados</h3><button class="btn-close" onclick="toggleModal('modal-editar-territorio')"><span class="material-icons">close</span></button></div>
+        <div class="modal-body">
+            <h4 id="edit-terr-id">---</h4>
+            <input type="text" id="edit-terr-nome">
+            <button class="btn-verde" onclick="salvarEdicaoTerritorio()">Salvar</button>
         </div>
+      </div>
+    </div>
+
+    <div id="modal-perfil" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header"><h3>Meu Perfil</h3><button class="btn-close" onclick="toggleModal('modal-perfil')"><span class="material-icons">close</span></button></div>
+        <div class="modal-body" style="text-align:center;">
+            <span class="material-icons" style="font-size: 60px; color:#ccc;">account_circle</span>
+            <h2 id="perfil-nome">---</h2>
+            <p id="perfil-email">---</p>
+            <p id="perfil-funcao" style="font-weight:bold; color:#3498db;">...</p>
+            <div id="area-admin-panel" class="hidden">
+                <button class="btn-designar" onclick="abrirGestaoUsuarios()"><span class="material-icons">group</span> Gerenciar Usuários</button>
+            </div>
+            <button class="btn-vermelho" onclick="fazerLogout()"><span class="material-icons">logout</span> Sair da Demo</button>
+        </div>
+      </div>
     </div>
 
     <div id="modal-mapa" class="modal-overlay hidden">
         <div class="modal-content">
-            <div class="modal-header"><h3 style="margin:0" id="titulo-mapa">...</h3><button class="btn-close" onclick="toggleModal('modal-mapa')"><span class="material-icons">close</span></button></div>
-            <div class="modal-body"><div id="conteudo-mapa"><p style="text-align:center;">Carregando...</p></div></div>
+            <div class="modal-header"><h3 id="titulo-mapa">...</h3><button class="btn-close" onclick="toggleModal('modal-mapa')"><span class="material-icons">close</span></button></div>
+            <div class="modal-body"><div id="conteudo-mapa"></div></div>
         </div>
     </div>
 
     <div id="modal-endereco" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div class="modal-header"><h3 style="margin:0" id="detalhes-endereco-titulo">Endereço</h3><button class="btn-close" onclick="toggleModal('modal-endereco')"><span class="material-icons">close</span></button></div>
-            <div class="modal-body">
-                <div style="text-align:left; margin-bottom: 15px;">
-                    <p><strong>Rua:</strong> <span id="detalhes-rua">---</span></p>
-                    <p><strong>Número:</strong> <span id="detalhes-numero">---</span></p>
-                    <p><strong>GPS:</strong> <span id="detalhes-gps">---</span></p>
-                </div>
-                <div id="leaflet-map-unico" style="height:300px; width:100%; border-radius: 8px; position:relative;"></div>
-                <button class="btn-azul" style="margin-top:10px;" onclick="toggleModal('modal-endereco')">Fechar</button>
+      <div class="modal-content">
+        <div class="modal-header"><h3>Endereço</h3><button class="btn-close" onclick="toggleModal('modal-endereco')"><span class="material-icons">close</span></button></div>
+        <div class="modal-body">
+            <div style="text-align:left;">
+                <p><strong>Rua:</strong> <span id="detalhes-rua">---</span></p>
+                <p><strong>Número:</strong> <span id="detalhes-numero">---</span></p>
+                <p><strong>GPS:</strong> <span id="detalhes-gps">---</span></p>
             </div>
+            <div id="leaflet-map-unico" style="height:300px; width:100%; border-radius: 8px;"></div>
+            <button class="btn-azul" onclick="toggleModal('modal-endereco')">Fechar</button>
         </div>
-    </div>
-
-    <div id="modal-confirmacao" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width:300px; padding:20px; text-align:center; align-self:center;">
-            <h3 id="confirm-titulo">Confirmação</h3>
-            <p id="confirm-texto">...</p>
-            <div style="display:flex; gap:10px; justify-content:center;">
-                <button id="confirm-sim" class="btn-azul">Sim</button>
-                <button onclick="toggleModal('modal-confirmacao')" class="btn-azul" style="background:#eee; color:#333;">Não</button>
-            </div>
-        </div>
+      </div>
     </div>
 
 <script>
 // ============================================
-// LÓGICA DE DEMONSTRAÇÃO (MOCK BACKEND)
+// 🧪 CONFIGURAÇÃO DO MOCK (SIMULAÇÃO)
 // ============================================
 
-// 1. DADOS FICTÍCIOS
-var mockUsuarios = [
-    { email: "admin@demo.com", nome: "Admin Demo", nivel: "Admin, Publicador" },
-    { email: "editor@demo.com", nome: "Editor Demo", nivel: "Editor, Publicador" },
-    { email: "publicador@demo.com", nome: "José Publicador", nivel: "Publicador" },
-    { email: "maria@demo.com", nome: "Maria Silva", nivel: "Publicador" },
-    { email: "joao@demo.com", nome: "João Souza", nivel: "Publicador" }
-];
+const mockDados = {
+    usuarios: [
+        { email: "admin@demo.com", nome: "Carlos Admin", nivel: "Admin, Publicador" },
+        { email: "editor@demo.com", nome: "Ana Editora", nivel: "Editor, Publicador" },
+        { email: "pub@demo.com", nome: "José Publicador", nivel: "Publicador" },
+        { email: "maria@demo.com", nome: "Maria Silva", nivel: "Publicador" }
+    ],
+    territorios: [
+        { id: "TERR-001", nome: "Centro - Setor A", status: "Livre", responsavel: "", dataSaida: "", podeGerenciar: true, podeAbrir: true },
+        { id: "TERR-002", nome: "Bairro Novo", status: "Ocupado", responsavel: "Maria Silva", dataSaida: "15/12/2025", podeGerenciar: true, podeAbrir: true },
+        { id: "TERR-003", nome: "Vila Rural", status: "Livre", responsavel: "", dataSaida: "", podeGerenciar: true, podeAbrir: true },
+        { id: "TERR-004", nome: "Industrial", status: "Ocupado", responsavel: "José Publicador", dataSaida: "18/12/2025", podeGerenciar: true, podeAbrir: true }
+    ],
+    solicitacoes: [
+        { data: "19/12/2025", nome: "Maria Silva", email: "maria@demo.com", info: "TERR-003", tipo: "TERRITORIO" }
+    ]
+};
 
-var mockTerritorios = [
-    { id: "TERR-001", nome: "Centro - Praça", status: "Livre", responsavel: "", dataSaida: "" },
-    { id: "TERR-002", nome: "Centro - Mercado", status: "Ocupado", responsavel: "Maria Silva", dataSaida: "10/12/2025" },
-    { id: "TERR-003", nome: "Bairro Alto - Rua A", status: "Ocupado", responsavel: "João Souza", dataSaida: "12/12/2025" },
-    { id: "TERR-004", nome: "Bairro Novo - Quadra 1", status: "Livre", responsavel: "", dataSaida: "" },
-    { id: "TERR-005", nome: "Rural - Estrada Velha", status: "Livre", responsavel: "", dataSaida: "" },
-    // O Território 006 será manipulado para ser "Meu" se eu for o José Publicador
-    { id: "TERR-006", nome: "Vila Olímpica", status: "Ocupado", responsavel: "José Publicador", dataSaida: "15/12/2025" }
-];
+var sessaoUsuario = null;
 
-var mockSolicitacoes = [
-    { data: new Date(), nome: "João Souza", email: "joao@demo.com", info: "TERR-004", tipo: "TERRITORIO" },
-    { data: new Date(), nome: "Novo Usuário", email: "novo@demo.com", info: "123456789", tipo: "ACESSO" }
-];
-
-// Estado Global da Sessão Demo
-var usuarioAtual = null;
-
-// 2. FUNÇÃO QUE SUBSTITUI O FETCH
+// --- FUNÇÃO chameAPI MOCKADA (CIRÚRGICA) ---
 async function chamarAPI(acao, dados = {}) {
-    console.log(`[MOCK API] Ação: ${acao}`, dados);
+    console.log("[Demo API] Chamada:", acao, dados);
     
     // Simula atraso de rede
     await new Promise(r => setTimeout(r, 600));
 
-    // --- ROTEADOR MOCK ---
-    if (acao === "verificarLogin") {
-        const user = mockUsuarios.find(u => u.email === dados.email);
-        if (user) return { status: "APROVADO", nome: user.nome, email: user.email, nivel: user.nivel };
-        return { status: "ERRO" };
-    }
-
-    if (acao === "buscarTerritorios") {
-        // Retorna lista formatada com isMeu calculado
-        const listaFormatada = mockTerritorios.map(t => {
-            const isMeu = t.responsavel === usuarioAtual.nome; // Simplificação: usa nome aqui no mock
-            return {
-                id: t.id,
-                nome: t.nome,
-                status: t.status,
-                responsavel: t.responsavel,
-                dataSaida: t.dataSaida,
-                isMeu: isMeu,
-                // Permissões
-                podeGerenciar: usuarioAtual.nivel.includes("Admin") || usuarioAtual.nivel.includes("Dirigente"),
-                podeAbrir: isMeu || usuarioAtual.nivel.includes("Admin") || usuarioAtual.nivel.includes("Editor"),
-                ehEditor: usuarioAtual.nivel.includes("Editor")
-            };
-        });
-        return { 
-            mapas: listaFormatada, 
-            roles: { 
-                admin: usuarioAtual.nivel.includes("Admin"), 
-                dirigente: usuarioAtual.nivel.includes("Dirigente"), 
-                editor: usuarioAtual.nivel.includes("Editor") 
-            } 
-        };
-    }
-
-    if (acao === "listarTodosTerritoriosAdmin") {
-        // Retorna formato simples para lista de gestão
-        return mockTerritorios.map(t => ({
-            id: t.id, nome: t.nome, status: t.status, dono: t.responsavel, data: t.dataSaida
-        }));
-    }
-
-    if (acao === "processarAcaoTerritorio") {
-        const { id, tipoAcao, email } = dados;
-        const terr = mockTerritorios.find(t => t.id === id);
+    switch(acao) {
+        case "verificarLogin":
+            const user = mockDados.usuarios.find(u => u.email === dados.email);
+            return user ? { status: "APROVADO", ...user } : { status: "ERRO" };
         
-        if (tipoAcao === "pedir") {
-            // Em demo, aprovamos direto para ver o efeito visual ou criamos solicitacao
-            // Vamos simular sucesso imediato visual alterando o mock
-            if(terr.status === "Livre") {
+        case "buscarTerritorios":
+            // Ajusta isMeu dinamicamente para a demo
+            const mapas = mockDados.territorios.map(t => ({
+                ...t,
+                isMeu: t.responsavel === sessaoUsuario.nome
+            }));
+            return { mapas: mapas, roles: { admin: sessaoUsuario.nivel.includes("Admin"), editor: sessaoUsuario.nivel.includes("Editor") } };
+
+        case "listarTodosUsuarios":
+            return { usuarios: mockDados.usuarios };
+
+        case "listarTodosTerritoriosAdmin":
+            return mockDados.territorios.map(t => ({ ...t, data: t.dataSaida, dono: t.responsavel }));
+
+        case "buscarSolicitacoes":
+            return mockDados.solicitacoes;
+
+        case "buscarEnderecosPorTerritorio":
+            return { 
+                cidade: "Cidade Exemplo", 
+                enderecos: [
+                    { rua: "Rua das Flores", numero: "123", lat: -21.216, lng: -41.887 },
+                    { rua: "Av. Principal", numero: "500", lat: -21.218, lng: -41.889 }
+                ] 
+            };
+
+        case "processarAcaoTerritorio":
+            const terr = mockDados.territorios.find(t => t.id === dados.id);
+            if(dados.tipoAcao === "pedir") {
                 terr.status = "Ocupado";
-                terr.responsavel = usuarioAtual.nome;
-                terr.dataSaida = new Date().toLocaleDateString('pt-BR');
-                return { sucesso: "Território designado a você (Demo)." };
+                terr.responsavel = sessaoUsuario.nome;
+                terr.dataSaida = "Hoje";
             }
-        }
-        if (tipoAcao === "designar") {
-            const userAlvo = mockUsuarios.find(u => u.email === email);
-            terr.status = "Ocupado";
-            terr.responsavel = userAlvo ? userAlvo.nome : email;
-            terr.dataSaida = new Date().toLocaleDateString('pt-BR');
-            return { sucesso: `Designado para ${terr.responsavel} (Demo).` };
-        }
-        return { erro: "Ação simulada." };
-    }
+            return { sucesso: "Ação simulada com sucesso!" };
 
-    if (acao === "buscarEnderecosPorTerritorio") {
-        // Retorna coordenadas fictícias próximas a uma cidade genérica
-        return {
-            cidade: "Cidade Demo",
-            enderecos: [
-                { id: "1", rua: "Rua Exemplo A", numero: "100", referencia: "Casa Azul", lat: -23.55052, lng: -46.63330 },
-                { id: "2", rua: "Rua Exemplo A", numero: "120", referencia: "", lat: -23.55152, lng: -46.63430 },
-                { id: "3", rua: "Rua Exemplo B", numero: "50", referencia: "Sobrado", lat: -23.55252, lng: -46.63530 }
-            ]
-        };
+        default:
+            return { sucesso: "Operação demo concluída." };
     }
-
-    if (acao === "buscarSolicitacoes") {
-        return mockSolicitacoes;
-    }
-
-    if (acao === "listarTodosUsuarios") {
-        return { usuarios: mockUsuarios };
-    }
-
-    // Fallback para qualquer outra ação de escrita
-    return { sucesso: "Ação realizada com sucesso (Simulação)." };
 }
 
-// --- LÓGICA DE UI (Adaptada do index.html original) ---
-
-function mostrarNotificacao(msg, tipo="sucesso") {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = `toast ${tipo}`;
-    let icon = tipo === 'sucesso' ? 'check_circle' : 'error';
-    toast.innerHTML = `<span class="material-icons">${icon}</span> <span>${msg}</span>`;
-    container.appendChild(toast);
-    setTimeout(() => toast.classList.add('visible'), 10);
-    setTimeout(() => { toast.classList.remove('visible'); setTimeout(() => toast.remove(), 300); }, 3000);
-}
-
-// Inicialização: Se não tiver sessão, mostra login
-window.onload = function() {
-    // Na demo, sempre forçamos o login manual para escolher o perfil
-    document.getElementById('tela-login').classList.remove('hidden');
-};
-
-// Login Facilitado para Demo
+// --- LÓGICA DE LOGIN DEMO ---
 function loginDemo(perfil) {
-    let email = "";
-    if (perfil === 'admin') email = "admin@demo.com";
-    if (perfil === 'editor') email = "editor@demo.com";
-    if (perfil === 'publicador') email = "publicador@demo.com";
+    let emailFake = "";
+    if(perfil === 'Admin') emailFake = "admin@demo.com";
+    if(perfil === 'Editor') emailFake = "editor@demo.com";
+    if(perfil === 'Publicador') emailFake = "pub@demo.com";
 
-    // Simula o processo normal
-    mostrarNotificacao("Entrando no modo " + perfil + "...", "sucesso");
-    chamarAPI("verificarLogin", { email: email }).then(r => {
-        usuarioAtual = mockUsuarios.find(u => u.email === email);
+    chamarAPI("verificarLogin", { email: emailFake }).then(r => {
+        sessaoUsuario = r;
+        usuarioEmail = r.email;
+        usuarioNome = r.nome;
         processarLogin(r);
     });
 }
 
+// --- FUNÇÕES DE UI (CÓPIA DO ORIGINAL) ---
+
+function mostrarNotificacao(msg, tipo = "sucesso") {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${tipo}`;
+    toast.innerHTML = `<span class="material-icons">${tipo === 'sucesso' ? 'check_circle' : 'error'}</span> <span>${msg}</span>`;
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('visible'));
+    setTimeout(() => { toast.classList.remove('visible'); setTimeout(() => toast.remove(), 300); }, 3000);
+}
+
 function processarLogin(r) {
     document.getElementById('tela-login').classList.add('hidden');
-    
-    // Atualiza variaveis globais da demo
-    usuarioNome = r.nome;
-    usuarioEmail = r.email;
-
-    // Atualiza UI do Perfil
     document.getElementById('perfil-nome').innerText = r.nome;
     document.getElementById('perfil-email').innerText = r.email;
     document.getElementById('perfil-funcao').innerText = r.nivel;
-    if(document.getElementById('header-nome-usuario')) document.getElementById('header-nome-usuario').innerText = r.nome.split(' ')[0];
+    document.getElementById('header-nome-usuario').innerText = r.nome.split(' ')[0];
 
-    // Lógica RBAC
     const roles = r.nivel.toLowerCase();
-    const isAdmin = roles.includes('admin');
-    const isEditor = roles.includes('editor');
-    
-    // Painel Admin
-    if (isAdmin) document.getElementById('area-admin-panel').classList.remove('hidden');
-    else document.getElementById('area-admin-panel').classList.add('hidden');
+    if (roles.includes('admin')) document.getElementById('area-admin-panel').classList.remove('hidden');
+    if (roles.includes('admin') || roles.includes('editor')) document.getElementById('nav-gestao').classList.remove('hidden');
+    if (roles.includes('admin')) document.getElementById('btn-admin-bell').classList.remove('hidden');
 
-    // Botão Gestão
-    if (isAdmin || isEditor) document.getElementById('nav-gestao').classList.remove('hidden');
-    else document.getElementById('nav-gestao').classList.add('hidden');
-
-    // Sino
-    if (isAdmin) document.getElementById('btn-admin-bell').classList.remove('hidden');
-    else document.getElementById('btn-admin-bell').classList.add('hidden');
-
-    // Libera telas
     document.getElementById('app-header').classList.remove('hidden');
     document.getElementById('app-footer').classList.remove('hidden');
     document.getElementById('tela-sistema').classList.remove('hidden');
-    
     carregarSistema();
 }
 
-function fazerLogout() {
-    location.reload(); // Recarrega a página resetando a memória
-}
-
 function carregarSistema() {
-    document.getElementById('lista-territorios').innerHTML = '<p style="text-align:center; margin-top:20px;">Carregando...</p>';
-    chamarAPI("buscarTerritorios", { email: usuarioEmail }).then(renderizarDados);
-    // Só carrega notificações se for admin
-    if (usuarioAtual.nivel.toLowerCase().includes('admin')) {
-        carregarSolicitacoes();
-    }
+    document.getElementById('lista-territorios').innerHTML = '<p style="text-align:center;">Carregando Demo...</p>';
+    chamarAPI("buscarTerritorios").then(renderizarDados);
+    if(sessaoUsuario.nivel.includes("Admin")) carregarSolicitacoes();
 }
 
 function renderizarDados(resultado) {
-    const lista = resultado.mapas;
-    const divLista = document.getElementById('lista-territorios');
-    divLista.innerHTML = '';
-
-    if (!lista.length) { divLista.innerHTML = 'Nada aqui.'; return; }
-
-    lista.forEach(t => {
-        let classeStatus = 'status-' + t.status;
-        if (t.isMeu) classeStatus = 'status-Meu';
-        
-        let btnHtml = '';
-        if (t.podeGerenciar) {
-            btnHtml = `<button class="btn-designar" onclick="acionar('${t.id}', 'designar')"><span class="material-icons">assignment_ind</span> Designar</button>`;
-        } else if (t.status === 'Livre') {
-            btnHtml = `<button class="btn-pedir" onclick="acionar('${t.id}', 'pedir')"><span class="material-icons">touch_app</span> Pedir</button>`;
-        } else {
-            btnHtml = `<button class="btn-desabilitado" disabled><span class="material-icons">lock</span> Ocupado</button>`;
-        }
-
-        let mapBtn = t.podeAbrir ? `<button class="btn-mapa" onclick="abrirMapa('${t.id}', '${t.nome}')"><span class="material-icons">map</span> Mapa</button>` : '';
-
-        // Info extra
-        let info = '';
-        if(t.status === 'Ocupado' && t.responsavel) {
-            info = `<div style="margin-top:8px; font-size:0.85rem; color:#555;"><i class="material-icons" style="font-size:14px; vertical-align:middle;">person</i> ${t.responsavel}</div>`;
-        }
-
+    const div = document.getElementById('lista-territorios');
+    div.innerHTML = '';
+    resultado.mapas.forEach(t => {
         const card = document.createElement('div');
-        card.className = `card ${classeStatus}`;
-        card.innerHTML = `<h3>${t.id}</h3><p><strong>${t.nome}</strong></p><p>${t.status}${t.isMeu ? ' (Você)' : ''}</p>${info}${btnHtml}${mapBtn}`;
-        divLista.appendChild(card);
+        card.className = `card status-${t.isMeu ? 'Meu' : t.status}`;
+        card.innerHTML = `
+            <h3>${t.id}</h3>
+            <p><strong>${t.nome}</strong></p>
+            <p>${t.status} ${t.isMeu ? '(Você)' : ''}</p>
+            ${t.status === 'Ocupado' ? `<p style="font-size:0.8rem; color:#888;"><span class="material-icons" style="font-size:12px">person</span> ${t.responsavel}</p>` : ''}
+            <button class="${t.status === 'Livre' ? 'btn-pedir' : 'btn-desabilitado'}" ${t.status !== 'Livre' ? 'disabled' : ''} onclick="acionar('${t.id}', 'pedir')">
+                <span class="material-icons">${t.status === 'Livre' ? 'touch_app' : 'lock'}</span> ${t.status === 'Livre' ? 'Pedir' : 'Ocupado'}
+            </button>
+            <button class="btn-azul" onclick="abrirMapa('${t.id}', '${t.nome}')"><span class="material-icons">map</span> Ver Mapa</button>
+        `;
+        div.appendChild(card);
     });
 }
 
 function acionar(id, acao) {
-    if (acao === 'designar') {
-        idTerritorioParaDesignar = id;
-        toggleModal('modal-designar');
-        carregarListaPublicadoresNoSelect();
-        return;
-    }
-    // Pedir
-    toggleModal('modal-confirmacao');
-    document.getElementById('confirm-texto').innerText = "Deseja pedir este território (Simulação)?";
-    
-    // Override do botão sim
-    const btnSim = document.getElementById('confirm-sim');
-    const novoBtn = btnSim.cloneNode(true);
-    btnSim.parentNode.replaceChild(novoBtn, btnSim);
-    
-    novoBtn.onclick = function() {
-        toggleModal('modal-confirmacao');
-        chamarAPI("processarAcaoTerritorio", { id: id, tipoAcao: acao, email: usuarioEmail }).then(r => {
-            mostrarNotificacao(r.sucesso || r.erro, r.erro ? "erro" : "sucesso");
-            carregarSistema();
-        });
-    };
-}
-
-// Funções Auxiliares de Mock
-function carregarListaPublicadoresNoSelect() {
-    const sel = document.getElementById('sel-designar-pub');
-    sel.innerHTML = '';
-    mockUsuarios.forEach(u => {
-        const opt = document.createElement('option');
-        opt.value = u.email;
-        opt.innerText = u.nome;
-        sel.appendChild(opt);
-    });
-    
-    document.getElementById('btn-confirmar-designacao').onclick = function() {
-        const alvo = sel.value;
-        toggleModal('modal-designar');
-        chamarAPI("processarAcaoTerritorio", { id: idTerritorioParaDesignar, tipoAcao: "designar", email: alvo }).then(r => {
-            mostrarNotificacao(r.sucesso, "sucesso");
-            carregarSistema();
-        });
-    }
-}
-
-function carregarSolicitacoes() {
-    const div = document.getElementById('lista-solicitacoes');
-    div.innerHTML = '';
-    mockSolicitacoes.forEach(s => {
-        div.innerHTML += `<div class="card-aprovacao" style="padding:10px; margin-bottom:5px; border-left:4px solid #f39c12;"><b>${s.tipo}</b><br>${s.nome} - ${s.info}</div>`;
+    mostrarNotificacao("Processando na Demo...", "sucesso");
+    chamarAPI("processarAcaoTerritorio", { id: id, tipoAcao: acao }).then(r => {
+        mostrarNotificacao(r.sucesso);
+        carregarSistema();
     });
 }
 
-function abrirGestaoTerritorios() {
-    toggleModal('modal-gestao-lista');
-    const div = document.getElementById('lista-gestao-body');
-    div.innerHTML = '';
-    mockTerritorios.forEach(t => {
-        div.innerHTML += `<div class="item-selecao"><b>${t.id}</b> - ${t.nome}</div>`;
-    });
-}
-
-function abrirGestaoUsuarios() {
-    toggleModal('modal-users');
-    const div = document.getElementById('lista-users-body');
-    div.innerHTML = '';
-    mockUsuarios.forEach(u => {
-        div.innerHTML += `<div class="item-selecao"><b>${u.nome}</b><br><small>${u.nivel}</small></div>`;
-    });
-}
-
+var mapaAtual = null;
 function abrirMapa(id, nome) {
     toggleModal('modal-mapa');
     document.getElementById('titulo-mapa').innerText = nome;
     chamarAPI("buscarEnderecosPorTerritorio").then(res => {
         document.getElementById('conteudo-mapa').innerHTML = '<div id="leaflet-map-container" style="height:300px; width:100%;"></div>';
-        
         setTimeout(() => {
-            mapaAtual = L.map('leaflet-map-container').setView([-23.55052, -46.63330], 15);
+            if(mapaAtual) mapaAtual.remove();
+            mapaAtual = L.map('leaflet-map-container').setView([-21.216, -41.887], 15);
             L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapaAtual);
-            res.enderecos.forEach(e => {
-                L.marker([e.lat, e.lng]).addTo(mapaAtual).bindPopup(e.rua);
-            });
+            res.enderecos.forEach(e => L.marker([e.lat, e.lng]).addTo(mapaAtual).bindPopup(e.rua));
         }, 200);
     });
 }
 
-// UX: Alternar Abas e Modais
-function trocarAba(btn, telaId) {
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
+function trocarAba(btn, tela) { 
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     btn.classList.add('active');
-    // Em demo, como é SPA simples, nada complexo aqui
 }
-function toggleModal(id) {
-    document.getElementById(id).classList.toggle('hidden');
+function fazerLogout() { location.reload(); }
+
+// --- OUTRAS FUNÇÕES DE GESTÃO (SIMULADAS) ---
+function abrirGestaoUsuarios() {
+    toggleModal('modal-users');
+    chamarAPI("listarTodosUsuarios").then(res => {
+        const body = document.getElementById('lista-users-body');
+        body.innerHTML = res.usuarios.map(u => `<div class="item-usuario"><div><b>${u.nome}</b><br><small>${u.email}</small></div><span class="tags-roles"><span>${u.nivel}</span></span></div>`).join('');
+    });
 }
-function salvarEdicaoViaModal() {
-    toggleModal('modal-editar-usuario');
-    mostrarNotificacao("Salvo (Simulação)", "sucesso");
+
+function carregarSolicitacoes() {
+    chamarAPI("buscarSolicitacoes").then(res => {
+        const div = document.getElementById('lista-solicitacoes');
+        div.innerHTML = res.map(s => `<div class="card-aprovacao" style="padding:10px; margin-bottom:10px; border-left:4px solid #f39c12;"><b>${s.nome}</b> pediu o mapa <b>${s.info}</b></div>`).join('');
+        const badge = document.getElementById('admin-badge');
+        badge.innerText = res.length;
+        badge.classList.remove('hidden');
+    });
 }
-function filtrarListaEdicao(v) { /* Lógica filtro simples */ }
+
+function abrirGestaoTerritorios() {
+    toggleModal('modal-gestao-lista');
+    chamarAPI("listarTodosTerritoriosAdmin").then(res => {
+        const body = document.getElementById('lista-gestao-body');
+        body.innerHTML = res.map(t => `<div class="item-selecao" onclick="mostrarNotificacao('Edição disponível na demo','sucesso')"><b>${t.id}</b> - ${t.nome}</div>`).join('');
+    });
+}
 
 </script>
 </body>
