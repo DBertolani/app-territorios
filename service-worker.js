@@ -1,10 +1,10 @@
 /* ==========================================================================
- * ARQUIVO: service-worker.js (Versão 3.0.0-final)
+ * ARQUIVO: service-worker.js (Versão 3.1.0-fix)
  * Descrição: Gerenciador de cache, proxy de rede e atualizador de versão.
  * ========================================================================== */
 
 // CONTROLE DE VERSÃO: Mude isso sempre que atualizar o HTML/CSS/JS
-const CACHE_VERSION = 'v3.0.0-final';
+const CACHE_VERSION = 'v3.1.0-fix';
 const CACHE_STATIC = `static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `dynamic-${CACHE_VERSION}`;
 
