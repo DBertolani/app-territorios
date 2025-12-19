@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Territórios (DEMO)</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+/* ===== HEADER DEMO ===== */
+.app-header {
+    background: linear-gradient(90deg, #8e44ad, #9b59b6);
+}
+.app-title span, .app-title div span {
+    color: #fff !important;
+}
+.demo-badge {
+    font-size: 0.7rem;
+    background: #f1c40f;
+    color: #333;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+/* ===== TODO O RESTO É IDÊNTICO AO INDEX ===== */
+/* (CSS original preservado – removido aqui apenas para reduzir repetição visual no chat) */
+</style>
+</head>
+
+<body>
+
+<div id="toast-container"></div>
+
+<header class="app-header hidden" id="app-header">
+  <div class="app-title">
+    <span class="material-icons">map</span>
+    <div>
+      <span>Territórios</span>
+      <span class="demo-badge">DEMO</span>
+      <span id="header-nome-usuario" style="font-size:0.7rem;"></span>
+    </div>
+  </div>
+</header>
+
+<!-- LOGIN DEMO -->
+<div id="tela-login" class="tela-central">
+  <h2>👤 Entrar (DEMO)</h2>
+  <p>Escolha um perfil para testar:</p>
+
+  <button class="btn-azul" onclick="loginDemo('Admin')">Admin</button>
+  <button class="btn-designar" onclick="loginDemo('Editor')">Editor</button>
+  <button class="btn-pedir" onclick="loginDemo('Publicador')">Publicador</button>
+</div>
+
+<div id="tela-sistema" class="hidden">
+  <div id="lista-territorios" class="container"></div>
+</div>
+
+<nav class="app-footer hidden" id="app-footer">
+  <button class="nav-item active">
+    <span class="material-icons">dashboard</span>
+    <span>Cartões</span>
+  </button>
+</nav>
+
+<script>
+/* =====================================================
+   📦 BANCO DE DADOS FAKE (ESTADO LOCAL)
+===================================================== */
+let mockUsuarios = [
+  { email: "admin@demo", nome: "Administrador", nivel: "Admin" },
+  { email: "editor@demo", nome: "Editor Demo", nivel: "Editor" },
+  { email: "pub@demo", nome: "Publicador Demo", nivel: "Publicador" }
+];
+
+let mockTerritorios = [
+  { id: "T-01", nome: "Centro", status: "Livre" },
+  { id: "T-02", nome: "Bairro Norte", status: "Ocupado", responsavel: "João", dataSaida: "10/09/2025" },
+  { id: "T-03", nome: "Zona Sul", status: "Livre" }
+];
+
+let usuarioEmail = "";
+let usuarioNome = "";
+let usuarioNivel = "";
+
+/* =====================================================
+   🔁 MOCK DA API
+===================================================== */
+function chamarAPI(acao, dados = {}) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+
+      if (acao === "verificarLogin") {
+        resolve({ status: "APROVADO", nome: usuarioNome, nivel: usuarioNivel });
+      }
+
+      if (acao === "buscarTerritorios") {
+        resolve({
+          mapas: mockTerritorios.map(t => ({
+            ...t,
+            isMeu: t.responsavel === usuarioNome,
+            podeGerenciar: usuarioNivel !== "Publicador",
+            podeAbrir: true
+          }))
+        });
+      }
+
+      if (acao === "processarAcaoTerritorio") {
+        let terr = mockTerritorios.find(t => t.id === dados.id);
+        if (dados.tipoAcao === "pedir") {
+          terr.status = "Ocupado";
+          terr.responsavel = usuarioNome;
+          terr.dataSaida = new Date().toLocaleDateString();
+        }
+        resolve({ sucesso: "Ação realizada (DEMO)" });
+      }
+
+    }, 600);
+  });
+}
+
+/* =====================================================
+   🔐 LOGIN DEMO
+===================================================== */
+function loginDemo(tipo) {
+  usuarioNivel = tipo;
+  usuarioNome = tipo + " Demo";
+  usuarioEmail = tipo.toLowerCase() + "@demo";
+
+  document.getElementById("tela-login").classList.add("hidden");
+  document.getElementById("app-header").classList.remove("hidden");
+  document.getElementById("app-footer").classList.remove("hidden");
+  document.getElementById("tela-sistema").classList.remove("hidden");
+  document.getElementById("header-nome-usuario").innerText = usuarioNome;
+
+  carregarSistema();
+}
+
+/* =====================================================
+   📊 SISTEMA
+===================================================== */
+function carregarSistema() {
+  chamarAPI("buscarTerritorios").then(renderizarDados);
+}
+
+function renderizarDados(resultado) {
+  let div = document.getElementById("lista-territorios");
+  div.innerHTML = "";
+
+  resultado.mapas.forEach(t => {
+    let card = document.createElement("div");
+    card.className = "card status-" + t.status;
+    card.innerHTML = `
+      <h3>${t.id}</h3>
+      <p><b>${t.nome}</b></p>
+      <p>${t.status}${t.isMeu ? " (Você)" : ""}</p>
+      ${t.status === "Livre" ? `<button class="btn-pedir" onclick="acionar('${t.id}','pedir')">Pedir</button>` : ""}
+    `;
+    div.appendChild(card);
+  });
+}
+
+function acionar(id, acao) {
+  chamarAPI("processarAcaoTerritorio", { id, tipoAcao: acao }).then(() => carregarSistema());
+}
+</script>
+
+</body>
+</html>
