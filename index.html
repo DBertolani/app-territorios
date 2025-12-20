@@ -43,7 +43,21 @@
         .app-header { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); z-index: 1000; }
         .app-title { font-size: 1.2rem; font-weight: 700; color: #333; display: flex; align-items: center; gap: 8px; }
         .app-footer { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; background: none; border: none; color: #999; font-size: 0.75rem; gap: 2px; padding: 0; margin: 0; width: auto; }
+        .nav-item { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            background: none; 
+            border: none; 
+            color: #999; 
+            font-size: 0.75rem; 
+            gap: 2px; 
+            padding: 0; 
+            margin: 0; 
+            width: auto; 
+            cursor: pointer;
+        }
         .nav-item.active { color: #3498db; }
         .nav-item .material-icons { font-size: 24px; }
         .icon-btn { background: none; border: none; cursor: pointer; position: relative; color: #555; padding: 5px; }
@@ -702,6 +716,84 @@ function tendarDevolver(id) {
     acionar(id, 'devolver');
 }
 
+// --- FUNÇÕES DE GESTÃO (EDITOR/ADMIN) ---
+function abrirGestaoTerritorios() {
+    toggleModal('modal-gestao-lista');
+    var divBody = document.getElementById('lista-gestao-body');
+    divBody.innerHTML = '<p style="text-align:center;">Carregando...</p>';
+    
+    chamarAPI("listarTodosTerritoriosAdmin").then(res => {
+        var lista = res || [];
+        divBody.innerHTML = '';
+        var ul = document.createElement('div');
+        
+        lista.forEach(t => {
+            var item = document.createElement('div');
+            item.className = 'item-selecao';
+            item.innerHTML = `<div><b>${t.id}</b> - ${t.nome}</div>`;
+            item.onclick = () => abrirEdicaoTerritorio(t.id, t.nome);
+            ul.appendChild(item);
+        });
+        divBody.appendChild(ul);
+    });
+}
+
+function filtrarListaEdicao(texto) {
+    var termo = texto.toLowerCase();
+    document.querySelectorAll('#lista-gestao-body .item-selecao').forEach(item => {
+        item.style.display = item.innerText.toLowerCase().includes(termo) ? 'flex' : 'none';
+    });
+}
+
+function abrirEdicaoTerritorio(id, nome) {
+    idTerritorioEdicao = id;
+    document.getElementById('edit-terr-id').innerText = id;
+    document.getElementById('edit-terr-nome').value = nome;
+    toggleModal('modal-gestao-lista'); 
+    toggleModal('modal-editar-territorio');
+}
+
+function salvarEdicaoTerritorio() {
+    var novoNome = document.getElementById('edit-terr-nome').value;
+    if(!novoNome) return mostrarNotificacao("Nome inválido", "erro");
+    
+    chamarAPI("salvarDadosTerritorio", { idTerritorio: idTerritorioEdicao, novoNome: novoNome })
+        .then(r => {
+            if(r.erro) mostrarNotificacao(r.erro, "erro");
+            else {
+                mostrarNotificacao("Salvo com sucesso!", "sucesso");
+                toggleModal('modal-editar-territorio');
+                carregarSistema();
+            }
+        });
+}
+
+// Função para abrir o painel de usuários (para o Admin)
+function abrirGestaoUsuarios() {
+    toggleModal('modal-perfil'); // Fecha o perfil
+    toggleModal('modal-users');
+    var divBody = document.getElementById('lista-users-body');
+    divBody.innerHTML = '<p style="text-align:center; margin-top:20px;">Buscando usuários...</p>';
+    
+    chamarAPI("listarTodosUsuarios", { email: usuarioEmail }).then(function(res) {
+        var lista = res.usuarios; 
+        if (!lista || res.erro) { 
+            divBody.innerHTML = '<p style="text-align:center;">Erro ao carregar ou sem permissão.</p>'; 
+            return; 
+        }
+        divBody.innerHTML = '';
+        var ul = document.createElement('div');
+        lista.forEach(function(u) {
+            var item = document.createElement('div');
+            item.className = 'item-usuario';
+            var tags = u.nivel.split(',').map(n => '<span>'+n.trim()+'</span>').join('');
+            item.innerHTML = `<div><div style="font-weight:bold;">${u.nome}</div><div style="font-size:0.8rem; color:#666;">${u.email}</div><div class="tags-roles" style="margin-top:5px;">${tags}</div></div><button class="icon-btn" onclick="abrirModalEdicao('${u.email}', '${u.nome}', '${u.nivel}')"><span class="material-icons">edit</span></button>`;
+            ul.appendChild(item);
+        });
+        divBody.appendChild(ul);
+    });
+}
+    
 function acionar(id, acao) {
     if (acao === 'designar') {
         idTerritorioParaDesignar = id;
@@ -809,5 +901,6 @@ if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./service-
 
 </body>
 </html>
+
 
 
