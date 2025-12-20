@@ -88,14 +88,19 @@
         .modal-content { background: #fff; width: 95%; max-width: 720px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: calc(100vh - 40px); overflow: hidden; padding: 0; }
         .modal-header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid #eee; }
         .modal-body { flex: 1; overflow-y: auto; padding: 20px; }
-        
-        #modal-confirmacao { z-index: 3000; }
+
+        #modal-selecao { z-index: 3500 !important; } /* Lista de Sugestão no topo */
+        #modal-confirmacao { z-index: 3000 !important; } /* Painel de Análise/Confirmação */
         #modal-confirmacao .modal-content { max-height: auto; height: auto; align-self: center; padding: 20px; max-width: 350px; }
         #toast-container { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 5000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; width: 90%; max-width: 400px; }
         .toast { background: #333; color: #fff; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(-20px); transition: all 0.3s ease; font-size: 0.95rem; text-align: center; pointer-events: auto; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .toast.visible { opacity: 1; transform: translateY(0); }
         .toast.sucesso { background-color: #27ae60; }
         .toast.erro { background-color: #e74c3c; }
+
+        /* Ajuste Fino do Botão Gestão */
+        #nav-gestao .material-icons { margin-bottom: 0; line-height: 1; }
+        #nav-gestao span { margin-top: 2px; }
 
         /* --- 6. ESTILOS EXTRAS E GESTÃO --- */
         .box-registro-visita { background: #f0f8ff; border: 1px solid #cceeff; border-radius: 8px; padding: 15px; margin-top: 15px; }
@@ -192,10 +197,10 @@
 
     <nav class="app-footer hidden" id="app-footer">
       <button class="nav-item active" onclick="trocarAba(this, 'tela-sistema')"><span class="material-icons">dashboard</span> <span>Cartões</span> </button>
-      <button class="nav-item hidden" id="nav-gestao" onclick="abrirGestaoTerritorios()">
-    <span class="material-icons">folder_managed</span>
-    <span>Gestão</span>
-        </button>
+            <button class="nav-item hidden" id="nav-gestao" onclick="abrirGestaoTerritorios()">
+                <span class="material-icons">folder_managed</span>
+                <span>Gestão</span>
+            </button>
       <button class="nav-item" onclick="toggleModal('modal-perfil')"><span class="material-icons">person</span><span>Perfil</span></button>
     </nav>
 
@@ -721,26 +726,34 @@ function finalizarDesignacao() {
     chamarAPI("processarAcaoTerritorio", payload).then(() => { toggleModal('modal-designar'); carregarSistema(); });
 }
 
+// --- 3. placeholder DA GESTÃO ---
+
 function abrirGestaoTerritorios() {
     toggleModal('modal-gestao-lista');
     var body = document.getElementById('lista-gestao-body');
-    body.innerHTML = '<p style="text-align:center;">Carregando...</p>';
-
-    // Placeholder para futura gestão completa
-    var headerGestao = `
-    <div style="margin-bottom:15px; padding:10px; background:#e3f2fd; border-radius:8px; border:1px solid #bbdefb;">
-        <h4 style="margin:0 0 5px 0; color:#1976d2;">🔧 Painel de Dados</h4>
-        <p style="margin:0; font-size:0.8rem; color:#555;">Edição de Cidades e Endereços em breve.</p>
-    </div>`;
+    
+    // Placeholder visual para evitar tela branca ou erro
+    body.innerHTML = `
+        <div style="text-align:center; padding:20px; color:#666;">
+            <span class="material-icons" style="font-size:48px; color:#ddd;">build</span>
+            <p><b>Modo de Gestão</b></p>
+            <p style="font-size:0.9rem;">Selecione um território na lista acima (se houver filtro) ou aguarde novas funcionalidades de edição em massa.</p>
+        </div>
+        <p style="text-align:center;">Carregando lista...</p>
+    `;
 
     chamarAPI("listarTodosTerritoriosAdmin").then(res => {
-        body.innerHTML = headerGestao; // Insere o placeholder
+        // Limpa o placeholder apenas quando os dados chegarem
+        body.innerHTML = ''; 
+        if(!res || !res.length) {
+            body.innerHTML = '<p style="text-align:center">Nenhum território encontrado.</p>';
+            return;
+        }
         res.forEach(t => {
             body.innerHTML += `<div class="item-selecao" onclick="abrirEdicaoTerritorio('${t.id}','${t.nome}')"><b>${t.id}</b> - ${t.nome}</div>`;
         });
     });
 }
-
 function filtrarListaEdicao(v) {
     document.querySelectorAll('#lista-gestao-body .item-selecao').forEach(i => i.style.display = i.innerText.toLowerCase().includes(v.toLowerCase()) ? 'flex' : 'none');
 }
@@ -839,37 +852,31 @@ function carregarSolicitacoes() {
     });
 }
 
-// NOVA FUNÇÃO PARA TRATAR O CLIQUE NO CARD
+// --- 2. SISTEMA DE NOTIFICAÇÕES REFATORADO (Chama com modoDireto = true) ---
+
 function abrirAcaoSolicitacao(email, nome, info, tipo) {
     if (tipo === 'TERRITORIO') {
-        // Usa o modal de confirmação adaptado para múltiplas opções
         var modal = document.getElementById('modal-confirmacao');
         var titulo = modal.querySelector('h3');
         var texto = document.getElementById('confirm-texto');
-        var containerBtns = modal.querySelector('.acoes-confirmacao') || modal.querySelector('div[style*="display:flex"]'); // Fallback para encontrar container
+        var containerBtns = modal.querySelector('div[style*="display:flex"]');
 
         titulo.innerText = "Analisar Pedido";
-        texto.innerHTML = `<p><b>${nome}</b> deseja o território <b>${info}</b>.</p><p style="font-size:0.9rem; color:#666;">O que deseja fazer?</p>`;
+        texto.innerHTML = `<p><b>${nome}</b> deseja o cartão <b>${info}</b>.</p><p style="color:#666; font-size:0.9rem;">Escolha uma ação:</p>`;
         
-        // Reconstrói botões de ação específicos
+        // Reconstrói botões passando 'true' para o modoDireto
         containerBtns.innerHTML = `
-            <button class="btn-designar" style="background:#27ae60; flex:1;" onclick="aprovarPedido('${email}', '${info}')">Aprovar</button>
-            <button class="btn-azul" style="background:#3498db; flex:1;" onclick="sugerirOutro('${email}', '${info}')">Sugerir</button>
-            <button class="btn-vermelho" style="background:#e74c3c; width:auto;" onclick="recusarPedido('${email}', '${info}', 'TERRITORIO')"><span class="material-icons">close</span></button>
+            <button class="btn-designar" style="flex:1; background:#27ae60;" onclick="aprovarPedido('${email}', '${info}', true)">Aprovar</button>
+            <button class="btn-azul" style="flex:1; background:#3498db;" onclick="sugerirOutro('${email}', '${info}')">Sugerir</button>
+            <button class="btn-vermelho" style="width:auto; background:#e74c3c;" onclick="recusarPedido('${email}', '${info}', 'TERRITORIO', true)"><span class="material-icons">close</span></button>
         `;
         
-        // Garante que a classe esteja correta para o CSS
-        containerBtns.className = 'acoes-confirmacao'; 
-        toggleModal('modal-confirmacao');
+        // Garante que o modal abra se estiver fechado
+        if(modal.classList.contains('hidden')) toggleModal('modal-confirmacao');
     } else {
-        // Mantém fluxo de cadastro (apenas redireciona para a função existente que abre o modal de checkboxes se necessário, ou adapta aqui)
-        // Para simplificar, chamamos a lógica antiga de cadastro que já abre modal específico se for o caso, ou criamos um confirm simples.
-        // Como o pedido pede Refatoração, vamos simplificar:
+        // Fallback simples para cadastro de usuário (mantém lógica antiga ou alerta)
         if(confirm(`Aprovar acesso para ${nome}?`)) {
-             // Chama lógica de aprovação padrão (pode precisar de ajuste se processarAprovacaoCadastro exigir ID de container)
-             // Ideal: Abrir um modalzinho rápido de seleção de papel. 
-             // Vou manter o fluxo atual chamando a função existente se possível, mas como ela depende de DOM, melhor alertar:
-             alert("Para aprovar cadastros, use a versão Desktop por enquanto ou implemente o seletor rápido.");
+             alert("Para aprovar usuários, use o menu: Perfil > Gerenciar Usuários.");
         }
     }
 }
@@ -887,10 +894,56 @@ function processarAprovacaoCadastro(email, nome, idContainer) {
     });
 }
 
-function aprovarPedido(email, id) { confirmarAcao("Aprovar", "Confirmar?", () => chamarAPI("aprovarPedidoTerritorio", { email: email, idTerritorio: id }).then(carregarSistema)); }
-function recusarPedido(email, info, tipo) { chamarAPI("recusarSolicitacao", { email: email, info: info, tipo: tipo }).then(carregarSolicitacoes); }
-function sugerirOutro(email, id) { abrirSeletorTerritorio(novo => chamarAPI("sugerirTrocaTerritorio", { email: email, idAtual: id, novoID: novo }).then(carregarSolicitacoes)); }
+// --- 1. FUNÇÕES DE AÇÃO CORRIGIDAS (Lógica de Modal vs Direto) ---
 
+function aprovarPedido(email, id, modoDireto = false) {
+    // Se vier do painel de análise (modoDireto), pula o modal de confirmação visual para não conflitar
+    if (modoDireto) {
+        if(!confirm(`Confirmar aprovação de ${id} para ${email}?`)) return; // Confirm nativo simples
+        chamarAPI("aprovarPedidoTerritorio", { email: email, idTerritorio: id }).then(r => {
+            mostrarNotificacao(r.sucesso || "Aprovado com sucesso!");
+            toggleModal('modal-confirmacao'); // Fecha o painel de análise
+            carregarSistema();
+        });
+    } else {
+        // Fluxo normal (clique em botão solto pela interface)
+        confirmarAcao("Aprovar", "Confirmar designação?", () => 
+            chamarAPI("aprovarPedidoTerritorio", { email: email, idTerritorio: id }).then(carregarSistema)
+        );
+    }
+}
+
+function recusarPedido(email, info, tipo, modoDireto = false) {
+    if (modoDireto) {
+        var motivo = prompt("Motivo da recusa (opcional):", "Indisponível");
+        if (motivo === null) return;
+        chamarAPI("recusarSolicitacao", { email: email, info: info, tipo: tipo, motivo: motivo }).then(() => {
+            mostrarNotificacao("Solicitação recusada.");
+            toggleModal('modal-confirmacao'); // Fecha o painel
+            carregarSolicitacoes();
+        });
+    } else {
+        chamarAPI("recusarSolicitacao", { email: email, info: info, tipo: tipo }).then(carregarSolicitacoes);
+    }
+}
+
+function sugerirOutro(email, idAtual) {
+    // Fecha o modal de confirmação/análise se estiver aberto para dar lugar à seleção
+    var modalConf = document.getElementById('modal-confirmacao');
+    if (!modalConf.classList.contains('hidden')) {
+        toggleModal('modal-confirmacao');
+    }
+
+    abrirSeletorTerritorio(novoID => {
+        if(!novoID) return;
+        chamarAPI("sugerirTrocaTerritorio", { email: email, idAtual: idAtual, novoID: novoID }).then(() => {
+            mostrarNotificacao("Sugestão enviada!");
+            carregarSolicitacoes();
+        });
+    });
+}
+
+    
 function abrirSeletorTerritorio(cb) {
     window.callbackSelecao = cb; 
     toggleModal('modal-selecao');
@@ -937,6 +990,7 @@ if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./service-
 
 </body>
 </html>
+
 
 
 
