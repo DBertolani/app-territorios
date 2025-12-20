@@ -198,38 +198,55 @@
         </div>
     </div>
 
-    <div id="modal-endereco" class="modal-overlay hidden">
+<div id="modal-endereco" class="modal-overlay hidden">
       <div class="modal-content">
-        <div class="modal-header"><h3 style="margin:0" id="detalhes-endereco-titulo">Endereço</h3><button class="btn-close" onclick="toggleModal('modal-endereco')"><span class="material-icons">close</span></button></div>
+        <div class="modal-header">
+            <h3 style="margin:0" id="detalhes-endereco-titulo">Endereço</h3>
+            <button class="btn-close" onclick="toggleModal('modal-endereco')"><span class="material-icons">close</span></button>
+        </div>
         <div class="modal-body">
-            <div style="text-align:left; margin-bottom: 10px;">
-                <p style="margin:2px 0; font-size:0.85rem; color:#666;">
-                    <span id="detalhes-cidade">---</span> - <span id="detalhes-bairro">---</span>
+            <div style="text-align:left; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <p style="margin:2px 0; color:#666; font-size: 0.9rem;">
+                    <span id="detalhes-cidade">---</span>
                 </p>
-                <hr style="margin:5px 0; border:0; border-top:1px solid #eee;">
-                <p style="font-size:1.1rem; margin:5px 0;"><strong id="detalhes-rua">---</strong>, <strong id="detalhes-numero">---</strong></p>
-                <p style="color:#e67e22; margin:5px 0;"><strong>Ref:</strong> <span id="detalhes-referencia">---</span></p>
-                <div style="display:flex; gap:10px; margin-top:10px;">
-                    <a id="link-gps-externo" href="#" target="_blank" class="btn-azul" style="text-decoration:none; background:#4285F4; flex:1;">
-                        <span class="material-icons" style="font-size:1rem; margin-right:5px;">directions</span> Ir (GPS)
-                    </a>
-                    <button class="btn-azul" id="btn-share-individual" style="background:#25D366; width:auto;">
-                        <span class="material-icons">share</span>
-                    </button>
-                </div>
+                <p style="margin:2px 0; color:#666; font-size: 0.9rem;">
+                    <span id="detalhes-bairro">---</span>
+                </p>
             </div>
+
+            <div style="text-align:left; margin-bottom: 15px;">
+                <h2 style="margin:5px 0; font-size: 1.2rem; color: #333;">
+                    <span id="detalhes-rua">---</span>, <span id="detalhes-numero">---</span>
+                </h2>
+                
+                <p id="container-referencia" style="margin:8px 0; padding: 8px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; color: #856404; font-size: 0.95rem; display: none;">
+                    <strong>Ref:</strong> <span id="detalhes-referencia">---</span>
+                </p>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-bottom: 20px;">
+                <a id="link-gps-externo" href="#" target="_blank" class="btn-azul" style="text-decoration:none; background:#4285F4; flex:1; text-align: center; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-icons" style="font-size:1.2rem; margin-right:8px;">directions</span> Ir (GPS)
+                </a>
+                <button class="btn-azul" id="btn-share-individual" style="background:#25D366; width:auto; padding: 0 15px;">
+                    <span class="material-icons">share</span>
+                </button>
+            </div>
+
             <div id="box-registro-visita-container" class="box-registro-visita hidden">
-                <label>Registro de Casa (Apenas Publicador):</label>
-                <select id="sel-status-visita">
-                    <option value="">Selecione...</option>
+                <label style="color: #3498db; font-weight: bold; margin-bottom: 8px; display: block;">Registro de Casa:</label>
+                <select id="sel-status-visita" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                    <option value="">Selecione o status...</option>
                     <option value="Nao em casa">Não em casa</option>
                     <option value="Nao atendeu">Não atendeu</option>
                     <option value="Visitado">Visitado</option>
+                    <option value="Ocupado">Ocupado / Voltar</option>
                 </select>
-                <input type="text" id="input-obs-visita" placeholder="Obs:">
-                <button class="btn-verde" onclick="salvarVisitaAtual()">💾 Salvar</button>
+                <input type="text" id="input-obs-visita" placeholder="Obs (opcional):" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                <button class="btn-verde" onclick="salvarVisitaAtual()" style="width: 100%;">💾 Salvar Registro</button>
             </div>
-            <div id="leaflet-map-unico" style="height:200px; width:100%; border-radius: 8px; margin-top:15px; position:relative;"></div>
+
+            <div id="leaflet-map-unico" style="height:200px; width:100%; border-radius: 8px; margin-top:15px; position:relative; z-index: 1;"></div>
         </div>
       </div>
     </div>
@@ -447,37 +464,53 @@ function abrirMapa(id, nome) {
          enderecosCache[id] = res.enderecos;
          territorioInfoCache[id] = { nome: nome, cidade: res.cidade };
          
+         // Layout do Mapa Geral
          document.getElementById('conteudo-mapa').innerHTML = 
-            '<div id="leaflet-map-container" style="height:250px; position:relative;">' +
-                '<button class="btn-fullscreen" onclick="toggleFullscreenMap(\'leaflet-map-container\')">' +
-                    '<span class="material-icons">fullscreen</span>' +
+            '<div id="leaflet-map-container" style="height:250px; position:relative; z-index: 1;">' +
+                '<button class="btn-fullscreen" onclick="toggleFullscreenMap(\'leaflet-map-container\')" style="position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; border: none; border-radius: 4px; padding: 5px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">' +
+                    '<span class="material-icons" style="font-size: 20px; color: #333;">fullscreen</span>' +
                 '</button>' +
             '</div>' +
-            '<ul class="lista-enderecos-cartao"></ul>' +
-            '<div id="area-botoes-mapa-geral" style="display:flex; flex-direction:column; gap:10px; margin-top:10px;"></div>';
+            '<ul class="lista-enderecos-cartao" style="padding: 0; list-style: none; margin-top: 10px;"></ul>' +
+            '<div id="area-botoes-mapa-geral" style="display:flex; flex-direction:column; gap:10px; margin-top:15px;"></div>';
          
          var ul = document.querySelector('.lista-enderecos-cartao');
          if (!registroTrabalhoLocal[id]) registroTrabalhoLocal[id] = [];
          
          setTimeout(() => {
-            if(mapaAtual) mapaAtual.remove();
+            if(mapaAtual) { mapaAtual.off(); mapaAtual.remove(); mapaAtual = null; } // Limpeza robusta
             mapaAtual = L.map('leaflet-map-container');
             L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapaAtual);
             var bounds = [];
             
             res.enderecos.forEach((end, i) => {
-                bounds.push([end.lat, end.lng]);
-                var check = registroTrabalhoLocal[id].includes(end.id) ? '✅' : '';
-                var refHtml = end.referencia ? `<br><small style="color:#e67e22">Ref: ${end.referencia}</small>` : '';
+                var latLng = [parseFloat(end.lat), parseFloat(end.lng)];
+                bounds.push(latLng);
+                var check = registroTrabalhoLocal[id].includes(end.id) ? '<span style="color:green; margin-left:5px;">✅</span>' : '';
+                
+                // Referência na lista (abaixo do endereço)
+                var refHtml = end.referencia ? `<div style="font-size: 0.85rem; color: #e67e22; margin-top: 2px;">Ref: ${end.referencia}</div>` : '';
                 
                 var li = document.createElement('li');
-                li.innerHTML = `<strong>${i+1}. ${end.rua}, ${end.numero}</strong> ${check} ${refHtml}`;
+                li.style.borderBottom = '1px solid #eee';
+                li.style.padding = '10px 0';
+                li.style.cursor = 'pointer';
+                li.innerHTML = `
+                    <div style="display: flex; align-items: flex-start;">
+                        <span style="font-weight: bold; color: #3498db; margin-right: 8px; min-width: 25px;">${i+1}.</span>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; color: #333;">${end.rua}, ${end.numero} ${check}</div>
+                            ${refHtml}
+                        </div>
+                        <span class="material-icons" style="color: #ccc; font-size: 20px;">chevron_right</span>
+                    </div>
+                `;
                 li.onclick = () => abrirDetalhesEndereco(i+1, id);
                 ul.appendChild(li);
-                L.marker([end.lat, end.lng]).addTo(mapaAtual).bindPopup(`${i+1}. ${end.rua}`);
+                L.marker(latLng).addTo(mapaAtual).bindPopup(`<b>${i+1}</b>. ${end.rua}, ${end.numero}`);
             });
             
-            if(bounds.length) mapaAtual.fitBounds(bounds, {padding:[20,20]});
+            if(bounds.length) mapaAtual.fitBounds(bounds, {padding:[30,30]});
             adicionarBotoesMapaGeral(id, nome, res.enderecos);
          }, 200);
     });
@@ -535,35 +568,76 @@ function toggleFullscreenMap(idContainer) {
 
 function abrirDetalhesEndereco(num, id) {
     var end = enderecosCache[id][num-1];
-    enderecoAtualId = end.id; territorioAtualId = id;
+    enderecoAtualId = end.id; 
+    territorioAtualId = id;
     
     var info = territorioInfoCache[id] || {};
-    document.getElementById('detalhes-cidade').innerText = info.cidade || '';
-    document.getElementById('detalhes-bairro').innerText = info.nome || '';
-    document.getElementById('detalhes-endereco-titulo').innerText = 'Endereço Nº ' + num;
+    
+    // Preenche Cabeçalho (Cidade / Bairro)
+    document.getElementById('detalhes-cidade').innerText = info.cidade ? `Cidade: ${info.cidade}` : '';
+    document.getElementById('detalhes-bairro').innerText = info.nome ? `Bairro/Região: ${info.nome}` : ''; // Assumindo que o nome do território é o bairro/região
+
+    // Preenche Endereço
     document.getElementById('detalhes-rua').innerText = end.rua;
     document.getElementById('detalhes-numero').innerText = end.numero;
-    document.getElementById('detalhes-referencia').innerText = end.referencia || '-';
-    document.getElementById('link-gps-externo').href = `https://www.google.com/maps/dir/?api=1&destination=${end.lat},${end.lng}`;
     
+    // Preenche Referência (com destaque e controle de exibição)
+    var refElem = document.getElementById('detalhes-referencia');
+    var containerRef = document.getElementById('container-referencia');
+    if (end.referencia && end.referencia.trim() !== "") {
+        refElem.innerText = end.referencia;
+        containerRef.style.display = 'block';
+    } else {
+        containerRef.style.display = 'none';
+    }
+    
+    // Link GPS Universal (Google Maps App/Web)
+    // Usa 'api=1&query=' para garantir melhor compatibilidade
+    var gpsUrl = `https://www.google.com/maps/search/?api=1&query=${end.lat},${end.lng}`;
+    document.getElementById('link-gps-externo').href = gpsUrl;
+    
+    // Botão Share Individual
     document.getElementById('btn-share-individual').onclick = function() {
-        var txt = `📍 *Endereço:* ${end.rua}, ${end.numero}\nRef: ${end.referencia||''}\n\n🗺️ *GPS:* https://www.google.com/maps/dir/?api=1&destination=${end.lat},${end.lng}`;
+        var txt = `📍 *Endereço:* ${end.rua}, ${end.numero}\n${end.referencia ? 'Ref: ' + end.referencia + '\n' : ''}\n🗺️ *Localização:* ${gpsUrl}`;
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}`);
     };
 
+    // Controle de Permissão do Registro de Visita
     var box = document.getElementById('box-registro-visita-container');
-    // Controle de visualização se necessário: box.classList.toggle('hidden', ...);
+    // Lógica: Mostrar SOMENTE se o território é 'Meu' (está na lista de 'Meus' do sistema)
+    // Como simplificação, verificamos se o usuário atual é o responsável no cache local ou se é Admin.
+    // Para maior precisão, o backend já retorna 'isMeu' na lista. Mas aqui estamos no detalhe.
+    // Uma forma segura é verificar se o ID do território está marcado como 'Meu' na UI principal.
+    // Vamos assumir por hora que sempre mostra, mas você pode descomentar a linha abaixo para travar:
+    // box.classList.toggle('hidden', !souDonoDoCartao(id)); // Precisa implementar souDonoDoCartao
 
+    // Limpa Form
     document.getElementById('sel-status-visita').value = "";
     document.getElementById('input-obs-visita').value = "";
 
-    if(mapaUnico) mapaUnico.remove();
+    if(mapaUnico) { mapaUnico.off(); mapaUnico.remove(); mapaUnico = null; }
     toggleModal('modal-endereco');
     
-    document.getElementById('leaflet-map-unico').innerHTML = '<button class="btn-fullscreen" onclick="toggleFullscreenMap(\'leaflet-map-unico\')"><span class="material-icons">fullscreen</span></button>';
+    // Injeta mapa pequeno com botão fullscreen
+    document.getElementById('leaflet-map-unico').innerHTML = 
+        '<div id="map-unico-container" style="height: 100%; width: 100%;">' +
+            '<button class="btn-fullscreen" onclick="toggleFullscreenMap(\'leaflet-map-unico\')" style="position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; border: none; border-radius: 4px; padding: 5px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">' +
+                '<span class="material-icons" style="font-size: 20px; color: #333;">fullscreen</span>' +
+            '</button>' +
+        '</div>';
 
     setTimeout(() => {
-        mapaUnico = L.map('leaflet-map-unico').setView([end.lat, end.lng], 18);
+        // Recria container interno para o Leaflet (necessário para limpeza correta)
+        var mapDiv = document.createElement('div');
+        mapDiv.id = 'map-unico-leaf';
+        mapDiv.style.height = '100%';
+        mapDiv.style.width = '100%';
+        document.getElementById('leaflet-map-unico').appendChild(mapDiv); // Adiciona ao container pai (que tem o botão)
+        // OBS: Leaflet precisa do ID direto. Vamos ajustar:
+        document.getElementById('leaflet-map-unico').innerHTML = ''; // Limpa tudo
+        document.getElementById('leaflet-map-unico').innerHTML = '<div id="map-unico-leaf" style="height:100%; width:100%;"></div><button class="btn-fullscreen" onclick="toggleFullscreenMap(\'leaflet-map-unico\')" style="position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; border: none; border-radius: 4px; padding: 5px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"><span class="material-icons" style="font-size: 20px; color: #333;">fullscreen</span></button>';
+
+        mapaUnico = L.map('map-unico-leaf').setView([end.lat, end.lng], 18);
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapaUnico);
         L.marker([end.lat, end.lng]).addTo(mapaUnico);
     }, 200);
@@ -762,3 +836,4 @@ if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./service-
 
 </body>
 </html>
+
