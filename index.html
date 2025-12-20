@@ -114,6 +114,16 @@
         .mapa-fullscreen .btn-fullscreen { color: #c00; background: white; border: 2px solid #c00; }
 
         @media (max-width: 480px) { .container { grid-template-columns: 1fr; padding: 0 10px; } }
+
+        /* --- CORREÇÃO Z-INDEX (Bug 1) --- */
+#modal-endereco { z-index: 2100 !important; }
+
+/* Estilo para hierarquia de endereço (Bug 2) */
+.end-meta { font-size: 0.85rem; color: #7f8c8d; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+.end-main { font-size: 1.4rem; font-weight: 700; color: #2c3e50; margin-bottom: 8px; line-height: 1.2; }
+.end-ref-box { background-color: #fff3cd; color: #856404; border-left: 4px solid #ffc107; padding: 10px; border-radius: 4px; font-size: 0.95rem; margin-bottom: 15px; display: none; }
+
+        
     </style>
 </head>
 <body>
@@ -199,57 +209,50 @@
     </div>
 
 <div id="modal-endereco" class="modal-overlay hidden">
-      <div class="modal-content">
-        <div class="modal-header">
-            <h3 style="margin:0" id="detalhes-endereco-titulo">Endereço</h3>
-            <button class="btn-close" onclick="toggleModal('modal-endereco')"><span class="material-icons">close</span></button>
-        </div>
-        <div class="modal-body">
-            <div style="text-align:left; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-                <p style="margin:2px 0; color:#666; font-size: 0.9rem;">
-                    <span id="detalhes-cidade">---</span>
-                </p>
-                <p style="margin:2px 0; color:#666; font-size: 0.9rem;">
-                    <span id="detalhes-bairro">---</span>
-                </p>
-            </div>
-
-            <div style="text-align:left; margin-bottom: 15px;">
-                <h2 style="margin:5px 0; font-size: 1.2rem; color: #333;">
-                    <span id="detalhes-rua">---</span>, <span id="detalhes-numero">---</span>
-                </h2>
-                
-                <p id="container-referencia" style="margin:8px 0; padding: 8px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; color: #856404; font-size: 0.95rem; display: none;">
-                    <strong>Ref:</strong> <span id="detalhes-referencia">---</span>
-                </p>
-            </div>
-
-            <div style="display:flex; gap:10px; margin-bottom: 20px;">
-                <a id="link-gps-externo" href="#" target="_blank" class="btn-azul" style="text-decoration:none; background:#4285F4; flex:1; text-align: center; display: flex; align-items: center; justify-content: center;">
-                    <span class="material-icons" style="font-size:1.2rem; margin-right:8px;">directions</span> Ir (GPS)
-                </a>
-                <button class="btn-azul" id="btn-share-individual" style="background:#25D366; width:auto; padding: 0 15px;">
-                    <span class="material-icons">share</span>
-                </button>
-            </div>
-
-            <div id="box-registro-visita-container" class="box-registro-visita hidden">
-                <label style="color: #3498db; font-weight: bold; margin-bottom: 8px; display: block;">Registro de Casa:</label>
-                <select id="sel-status-visita" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #ccc;">
-                    <option value="">Selecione o status...</option>
-                    <option value="Nao em casa">Não em casa</option>
-                    <option value="Nao atendeu">Não atendeu</option>
-                    <option value="Visitado">Visitado</option>
-                    <option value="Ocupado">Ocupado / Voltar</option>
-                </select>
-                <input type="text" id="input-obs-visita" placeholder="Obs (opcional):" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #ccc;">
-                <button class="btn-verde" onclick="salvarVisitaAtual()" style="width: 100%;">💾 Salvar Registro</button>
-            </div>
-
-            <div id="leaflet-map-unico" style="height:200px; width:100%; border-radius: 8px; margin-top:15px; position:relative; z-index: 1;"></div>
-        </div>
-      </div>
+  <div class="modal-content">
+    <div class="modal-header">
+        <h3 style="margin:0" id="detalhes-endereco-titulo">Endereço</h3>
+        <button class="btn-close" onclick="toggleModal('modal-endereco')"><span class="material-icons">close</span></button>
     </div>
+    <div class="modal-body">
+        <div style="text-align:left;">
+            <div class="end-meta">
+                <span id="detalhes-cidade">---</span> • <span id="detalhes-bairro">---</span>
+            </div>
+            <div class="end-main">
+                <span id="detalhes-rua">---</span>, <span id="detalhes-numero">---</span>
+            </div>
+            <div id="container-referencia" class="end-ref-box">
+                <strong>Ref:</strong> <span id="detalhes-referencia">---</span>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-bottom: 20px;">
+            <a id="link-gps-externo" href="#" target="_blank" class="btn-azul" style="text-decoration:none; background:#4285F4; flex:1; text-align: center; display: flex; align-items: center; justify-content: center;">
+                <span class="material-icons" style="font-size:1.2rem; margin-right:8px;">directions</span> Ir (GPS)
+            </a>
+            <button class="btn-azul" id="btn-share-individual" style="background:#25D366; width:auto; padding: 0 15px;">
+                <span class="material-icons">share</span>
+            </button>
+        </div>
+
+        <div id="box-registro-visita-container" class="box-registro-visita hidden">
+            <label style="color: #3498db; font-weight: bold; margin-bottom: 8px; display: block;">Registro de Casa:</label>
+            <select id="sel-status-visita" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                <option value="">Selecione o status...</option>
+                <option value="Nao em casa">Não em casa</option>
+                <option value="Nao atendeu">Não atendeu</option>
+                <option value="Visitado">Visitado</option>
+                <option value="Ocupado">Ocupado / Voltar</option>
+            </select>
+            <input type="text" id="input-obs-visita" placeholder="Obs (opcional):" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #ccc;">
+            <button class="btn-verde" onclick="salvarVisitaAtual()" style="width: 100%;">💾 Salvar Registro</button>
+        </div>
+
+        <div id="leaflet-map-unico" style="height:200px; width:100%; border-radius: 8px; margin-top:15px; position:relative; z-index: 1;"></div>
+    </div>
+  </div>
+</div>
 
     <div id="modal-gestao-lista" class="modal-overlay hidden">
       <div class="modal-content">
@@ -573,15 +576,16 @@ function abrirDetalhesEndereco(num, id) {
     
     var info = territorioInfoCache[id] || {};
     
-    // Preenche Cabeçalho (Cidade / Bairro)
-    document.getElementById('detalhes-cidade').innerText = info.cidade ? `Cidade: ${info.cidade}` : '';
-    document.getElementById('detalhes-bairro').innerText = info.nome ? `Bairro/Região: ${info.nome}` : ''; // Assumindo que o nome do território é o bairro/região
+    // Bug 2: Atualiza título com numeração
+    document.getElementById('detalhes-endereco-titulo').innerText = 'Endereço Nº ' + num;
 
-    // Preenche Endereço
+    // Preenche Hierarquia
+    document.getElementById('detalhes-cidade').innerText = info.cidade || 'Cidade N/A';
+    document.getElementById('detalhes-bairro').innerText = info.nome || 'Bairro N/A';
     document.getElementById('detalhes-rua').innerText = end.rua;
     document.getElementById('detalhes-numero').innerText = end.numero;
     
-    // Preenche Referência (com destaque e controle de exibição)
+    // Referência com display flex/none
     var refElem = document.getElementById('detalhes-referencia');
     var containerRef = document.getElementById('container-referencia');
     if (end.referencia && end.referencia.trim() !== "") {
@@ -591,55 +595,31 @@ function abrirDetalhesEndereco(num, id) {
         containerRef.style.display = 'none';
     }
     
-    // Link GPS Universal (Google Maps App/Web)
-    // Usa 'api=1&query=' para garantir melhor compatibilidade
-    var gpsUrl = `https://www.google.com/maps/search/?api=1&query=${end.lat},${end.lng}`;
+    // Links e Mapa
+    var gpsUrl = `http://googleusercontent.com/maps.google.com/maps?api=1&query=${end.lat},${end.lng}`;
     document.getElementById('link-gps-externo').href = gpsUrl;
     
-    // Botão Share Individual
     document.getElementById('btn-share-individual').onclick = function() {
         var txt = `📍 *Endereço:* ${end.rua}, ${end.numero}\n${end.referencia ? 'Ref: ' + end.referencia + '\n' : ''}\n🗺️ *Localização:* ${gpsUrl}`;
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}`);
     };
 
-    // Controle de Permissão do Registro de Visita
-    var box = document.getElementById('box-registro-visita-container');
-    // Lógica: Mostrar SOMENTE se o território é 'Meu' (está na lista de 'Meus' do sistema)
-    // Como simplificação, verificamos se o usuário atual é o responsável no cache local ou se é Admin.
-    // Para maior precisão, o backend já retorna 'isMeu' na lista. Mas aqui estamos no detalhe.
-    // Uma forma segura é verificar se o ID do território está marcado como 'Meu' na UI principal.
-    // Vamos assumir por hora que sempre mostra, mas você pode descomentar a linha abaixo para travar:
-    // box.classList.toggle('hidden', !souDonoDoCartao(id)); // Precisa implementar souDonoDoCartao
+    // Mostra box de registro
+    document.getElementById('box-registro-visita-container').classList.remove('hidden');
 
-    // Limpa Form
+    // Limpa e abre
     document.getElementById('sel-status-visita').value = "";
     document.getElementById('input-obs-visita').value = "";
 
     if(mapaUnico) { mapaUnico.off(); mapaUnico.remove(); mapaUnico = null; }
     toggleModal('modal-endereco');
     
-    // Injeta mapa pequeno com botão fullscreen
-    document.getElementById('leaflet-map-unico').innerHTML = 
-        '<div id="map-unico-container" style="height: 100%; width: 100%;">' +
-            '<button class="btn-fullscreen" onclick="toggleFullscreenMap(\'leaflet-map-unico\')" style="position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; border: none; border-radius: 4px; padding: 5px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">' +
-                '<span class="material-icons" style="font-size: 20px; color: #333;">fullscreen</span>' +
-            '</button>' +
-        '</div>';
-
+    // Injeta mapa único
     setTimeout(() => {
-        // Recria container interno para o Leaflet (necessário para limpeza correta)
-        var mapDiv = document.createElement('div');
-        mapDiv.id = 'map-unico-leaf';
-        mapDiv.style.height = '100%';
-        mapDiv.style.width = '100%';
-        document.getElementById('leaflet-map-unico').appendChild(mapDiv); // Adiciona ao container pai (que tem o botão)
-        // OBS: Leaflet precisa do ID direto. Vamos ajustar:
-        document.getElementById('leaflet-map-unico').innerHTML = ''; // Limpa tudo
-        document.getElementById('leaflet-map-unico').innerHTML = '<div id="map-unico-leaf" style="height:100%; width:100%;"></div><button class="btn-fullscreen" onclick="toggleFullscreenMap(\'leaflet-map-unico\')" style="position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; border: none; border-radius: 4px; padding: 5px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"><span class="material-icons" style="font-size: 20px; color: #333;">fullscreen</span></button>';
-
-        mapaUnico = L.map('map-unico-leaf').setView([end.lat, end.lng], 18);
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapaUnico);
-        L.marker([end.lat, end.lng]).addTo(mapaUnico);
+       document.getElementById('leaflet-map-unico').innerHTML = '<div id="map-unico-leaf" style="height:100%; width:100%;"></div>';
+       mapaUnico = L.map('map-unico-leaf').setView([end.lat, end.lng], 18);
+       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapaUnico);
+       L.marker([end.lat, end.lng]).addTo(mapaUnico);
     }, 200);
 }
 
@@ -723,10 +703,23 @@ function salvarEdicaoTerritorio() {
 }
 
 function abrirGestaoUsuarios() {
-    toggleModal('modal-perfil'); toggleModal('modal-users');
-    chamarAPI("listarTodosUsuarios").then(res => {
-        var body = document.getElementById('lista-users-body'); body.innerHTML = '';
-        res.usuarios.forEach(u => body.innerHTML += `<div class="item-usuario"><b>${u.nome}</b><br><small>${u.email}</small></div><button class="icon-btn" onclick="abrirModalEdicao('${u.email}', '${u.nome}', '${u.nivel}')"><span class="material-icons">edit</span></button>`);
+    toggleModal('modal-perfil'); 
+    toggleModal('modal-users');
+    // Bug 4: Adicionado payload { email: usuarioEmail }
+    chamarAPI("listarTodosUsuarios", { email: usuarioEmail }).then(res => {
+        var body = document.getElementById('lista-users-body'); 
+        body.innerHTML = '';
+        if(!res.usuarios) { body.innerHTML = '<p>Erro ao carregar.</p>'; return; }
+        
+        res.usuarios.forEach(u => {
+            body.innerHTML += `
+            <div class="item-usuario">
+                <div><b>${u.nome}</b><br><small>${u.email}</small><br>
+                <div class="tags-roles" style="margin-top:5px;">${u.nivel.split(',').map(n=>`<span>${n.trim()}</span>`).join('')}</div>
+                </div>
+                <button class="icon-btn" onclick="abrirModalEdicao('${u.email}', '${u.nome}', '${u.nivel}')"><span class="material-icons">edit</span></button>
+            </div>`;
+        });
     });
 }
 
@@ -811,10 +804,30 @@ function recusarPedido(email, info, tipo) { chamarAPI("recusarSolicitacao", { em
 function sugerirOutro(email, id) { abrirSeletorTerritorio(novo => chamarAPI("sugerirTrocaTerritorio", { email: email, idAtual: id, novoID: novo }).then(carregarSolicitacoes)); }
 
 function abrirSeletorTerritorio(cb) {
-    window.callbackSelecao = cb; toggleModal('modal-selecao');
+    window.callbackSelecao = cb; 
+    toggleModal('modal-selecao');
+    document.getElementById('corpo-selecao').innerHTML = '<p style="text-align:center">Carregando...</p>';
+    
     chamarAPI("listarTodosTerritoriosAdmin").then(res => {
-        var body = document.getElementById('corpo-selecao'); body.innerHTML = '';
-        res.forEach(t => body.innerHTML += `<div class="item-selecao" onclick="toggleModal('modal-selecao'); window.callbackSelecao('${t.id}')"><b>${t.id}</b> - ${t.nome} (${t.status})</div>`);
+        var body = document.getElementById('corpo-selecao'); 
+        body.innerHTML = '';
+        res.forEach(t => {
+            // Bug 3: Exibir Data de Entrega/Saída
+            var extraInfo = '';
+            if (t.status === 'Ocupado') {
+                // Tenta pegar data de entrega se existir, senão saída
+                var dataStr = t.dataEntrega || t.data || ''; 
+                extraInfo = dataStr ? `<span style="font-size:0.8rem; color:#e74c3c;">Prev. Entrega: ${dataStr}</span>` : '<span style="font-size:0.8rem; color:#e74c3c;">Ocupado</span>';
+            } else {
+                extraInfo = '<span style="font-size:0.8rem; color:#27ae60;">Livre</span>';
+            }
+
+            body.innerHTML += `
+            <div class="item-selecao" onclick="toggleModal('modal-selecao'); window.callbackSelecao('${t.id}')">
+                <div><b>${t.id}</b> - ${t.nome}</div>
+                <div>${extraInfo}</div>
+            </div>`;
+        });
     });
 }
 
@@ -836,4 +849,5 @@ if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./service-
 
 </body>
 </html>
+
 
