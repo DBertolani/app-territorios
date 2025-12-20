@@ -897,10 +897,29 @@ function confirmarAcao(titulo, texto, callback) {
 
 // Service Worker Logic
 if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./service-worker.js'); }
+
+    // --- FUNÇÃO PARA BUSCAR ATUALIZAÇÃO DO SISTEMA (PWA) ---
+function atualizarPWA() {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        mostrarNotificacao("Verificando se há uma nova versão...", "sucesso");
+        
+        // Envia mensagem para o Service Worker forçar a atualização
+        navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+        
+        // Pequeno delay para o navegador processar e recarregar
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    } else {
+        // Se não houver Service Worker ativo, apenas recarrega a página
+        window.location.reload();
+    }
+}
 </script>
 
 </body>
 </html>
+
 
 
 
