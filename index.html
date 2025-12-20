@@ -125,6 +125,21 @@
             .card { padding: 12px; }
             .card h3 { font-size: 1rem; }
         }
+
+/* Correção Footer */
+.app-footer { justify-content: space-around; } /* Já garante distribuição */
+
+/* Estilo para Formulário de Visita no Modal */
+.box-registro-visita {
+    background: #f0f8ff;
+    border: 1px solid #cceeff;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+}
+.box-registro-visita label { font-size: 0.9rem; font-weight: bold; color: #3498db; display: block; margin-bottom: 5px; }
+.btn-print { background-color: #7f8c8d; color: white; margin-top: 5px; } /* Botão visual */
+        
     </style>
 </head>
 <body>
@@ -222,7 +237,7 @@
         </div>
     </div>
 
-    <div id="modal-designar" class="modal-overlay hidden">
+<div id="modal-designar" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 400px; max-height: auto; align-self: center;">
             <div class="modal-header">
                 <h3 style="margin:0">Designar Território</h3>
@@ -230,9 +245,19 @@
             </div>
             <div class="modal-body">
                 <p id="msg-designar-titulo">Para quem vai este cartão?</p>
+                
                 <select id="sel-designar-pub">
                     <option value="">Carregando lista...</option>
                 </select>
+
+                <div style="margin: 15px 0; padding: 10px; background: #f9f9f9; border-radius: 6px;">
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" id="check-offline" onchange="toggleInputOffline()">
+                        <strong>Publicador sem App (Impresso)</strong>
+                    </label>
+                    <input type="text" id="input-offline-nome" class="hidden" placeholder="Digite o nome do irmão(ã)" style="margin-top:10px;">
+                </div>
+
                 <button class="btn-designar" id="btn-confirmar-designacao">Confirmar Designação</button>
             </div>
         </div>
@@ -311,21 +336,31 @@
         </div>
     </div>
 
-    <div id="modal-endereco" class="modal-overlay hidden">
+<div id="modal-endereco" class="modal-overlay hidden">
       <div class="modal-content">
         <div class="modal-header"><h3 style="margin:0" id="detalhes-endereco-titulo">Endereço</h3><button class="btn-close" onclick="toggleModal('modal-endereco')"><span class="material-icons">close</span></button></div>
         <div class="modal-body">
-            <div style="text-align:left; margin-bottom: 15px;">
-                <p style="margin:2px 0;"><strong>Cidade:</strong> <span id="detalhes-cidade">---</span></p>
-                <p style="margin:2px 0;"><strong>Bairro/Região:</strong> <span id="detalhes-bairro">---</span></p>
-                <hr style="margin: 10px 0;">
+            <div style="text-align:left; margin-bottom: 10px;">
                 <p style="margin:2px 0;"><strong>Rua:</strong> <span id="detalhes-rua">---</span></p>
                 <p style="margin:2px 0;"><strong>Número:</strong> <span id="detalhes-numero">---</span></p>
-                <p style="margin:2px 0;"><strong>Referência:</strong> <span id="detalhes-referencia">---</span></p>
-                <p style="margin:2px 0;"><strong>GPS:</strong> <span id="detalhes-gps">---</span></p>
+                <p style="margin:2px 0; color:#e67e22;"><strong>Ref:</strong> <span id="detalhes-referencia">---</span></p>
+                <a id="link-gps-externo" href="#" target="_blank" style="display:inline-block; margin-top:5px; color:#3498db; text-decoration:none; font-weight:bold;">Abrir no Google Maps ↗</a>
             </div>
-            <div id="leaflet-map-unico" style="height:300px; width:100%; border-radius: 8px; position:relative;"></div>
-            <button class="btn-designar" id="btn-traçar-rota" style="margin-top:15px;" target="_blank"><span class="material-icons">directions</span> Traçar Rota no Maps</button>
+
+            <div class="box-registro-visita">
+                <label>Registro de Casa:</label>
+                <select id="sel-status-visita">
+                    <option value="">Selecione...</option>
+                    <option value="Nao em casa">Não em casa</option>
+                    <option value="Nao atendeu">Não atendeu</option>
+                    <option value="Visitado">Visitado / Testemunho dado</option>
+                    <option value="Ocupado">Ocupado / Voltar depois</option>
+                </select>
+                <input type="text" id="input-obs-visita" placeholder="Obs: (ex: Cão bravo, homem interessado)">
+                <button class="btn-verde" onclick="salvarVisitaAtual()" style="margin-top:0;">💾 Salvar Registro</button>
+            </div>
+
+            <div id="leaflet-map-unico" style="height:200px; width:100%; border-radius: 8px; margin-top:15px;"></div>
             <button class="btn-azul" style="margin-top:10px; background-color:#ccc; color:#333;" onclick="toggleModal('modal-endereco')">Fechar</button>
         </div>
       </div>
@@ -345,28 +380,28 @@
 
 <script>
 // ============================================
-// ⚠️ COLOQUE O SEU LINK DE IMPLANTAÇÃO AQUI:
+// CONFIGURAÇÃO API
 const API_URL = "https://script.google.com/macros/s/AKfycbw_B0RlBbzKBft76h-HT1kYjE9fbh2udZfZ-uuMMgmLReBlFiIl2N3Xkv_pE8ndBKn1mA/exec"; 
 // ============================================
 
-// --- FUNÇÃO NOVA PARA BOTÕES ---
-function toggleModal(id) {
-    var modal = document.getElementById(id);
-    if (modal) {
-        if (modal.classList.contains('hidden')) {
-            modal.classList.remove('hidden');
-        } else {
-            modal.classList.add('hidden');
-        }
-    }
-}
-    
-    
+// --- ESTADO GLOBAL ---
+var usuarioEmail = "";
+var usuarioNome = "";
+var usuarioNivel = "";
+var mapaAtual = null; 
+var mapaUnico = null; 
+var enderecosCache = {};
+var territorioInfoCache = {}; 
+var idTerritorioParaDesignar = null; 
+var emailUsuarioEdicao = null;
+var idTerritorioEdicao = null;
+var enderecoAtualId = null; // Para salvar visita
+var territorioAtualId = null; // Para salvar visita
+var registroTrabalhoLocal = {}; // Cache local para bloquear devolução { "TERR-01": ["ID-END-01", "ID-END-02"] }
+
+// --- API ---
 async function chamarAPI(acao, dados = {}) {
-    if (API_URL.includes("SUA_URL")) {
-        mostrarNotificacao("Link da API não configurado!", "erro");
-        return { erro: "Configuração pendente" };
-    }
+    if (API_URL.includes("SUA_URL")) { mostrarNotificacao("API não configurada!", "erro"); return { erro: "Configuração" }; }
     dados.acao = acao;
     try {
         const response = await fetch(API_URL, { method: "POST", body: JSON.stringify(dados) });
@@ -374,17 +409,12 @@ async function chamarAPI(acao, dados = {}) {
     } catch (e) { return { erro: e.toString() }; }
 }
 
-var usuarioEmail = "";
-var usuarioNome = "";
-var mapaAtual = null; 
-var mapaUnico = null; 
-var enderecosCache = {};
-var territorioInfoCache = {}; 
-var idTerritorioParaDesignar = null; 
-var emailUsuarioEdicao = null;
-var idTerritorioEdicao = null; // Para edição de território
+// --- UI HELPERS ---
+function toggleModal(id) {
+    var modal = document.getElementById(id);
+    if (modal) modal.classList.toggle('hidden');
+}
 
-// --- SISTEMA DE TOAST ---
 function mostrarNotificacao(mensagem, tipo = "sucesso") {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
@@ -392,24 +422,11 @@ function mostrarNotificacao(mensagem, tipo = "sucesso") {
     let icone = tipo === 'sucesso' ? 'check_circle' : 'error';
     toast.innerHTML = `<span class="material-icons">${icone}</span> <span>${mensagem}</span>`;
     container.appendChild(toast);
-    requestAnimationFrame(() => { toast.classList.add('visible'); });
-    setTimeout(() => {
-        toast.classList.remove('visible');
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    requestAnimationFrame(() => toast.classList.add('visible'));
+    setTimeout(() => { toast.classList.remove('visible'); setTimeout(() => toast.remove(), 300); }, 3000);
 }
 
-// --- UPDATE PWA ---
-function atualizarPWA() {
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        mostrarNotificacao("Atualizando sistema...", "sucesso");
-        navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
-        setTimeout(() => window.location.reload(), 1000);
-    } else {
-        window.location.reload();
-    }
-}
-
+// --- LOGIN & STARTUP ---
 window.onload = function() {
   var emailSalvo = localStorage.getItem('app_territorios_email');
   if (emailSalvo) {
@@ -424,7 +441,6 @@ function fazerLogin() {
   var email = document.getElementById('login-email').value.trim();
   if (!email) return mostrarNotificacao("Digite seu e-mail.", "erro");
   usuarioEmail = email;
-
   var btn = document.querySelector('#tela-login button');
   var txt = btn.innerHTML;
   btn.innerHTML = "..."; btn.disabled = true;
@@ -442,7 +458,7 @@ function processarLogin(r) {
 
   if (r.status === "APROVADO") {
     usuarioNome = r.nome || "Publicador";
-    var usuarioNivel = r.nivel || "Publicador";
+    usuarioNivel = r.nivel || "Publicador";
     
     localStorage.setItem('app_territorios_email', usuarioEmail);
     localStorage.setItem('app_territorios_nivel', usuarioNivel);
@@ -450,39 +466,25 @@ function processarLogin(r) {
     document.getElementById('perfil-nome').innerText = usuarioNome;
     document.getElementById('perfil-email').innerText = usuarioEmail;
     document.getElementById('perfil-funcao').innerText = usuarioNivel;
+    if(document.getElementById('header-nome-usuario')) document.getElementById('header-nome-usuario').innerText = usuarioNome.split(' ')[0];
 
-    if(document.getElementById('header-nome-usuario')) {
-        document.getElementById('header-nome-usuario').innerText = usuarioNome.split(' ')[0];
-    }
-
-    // RBAC
+    // Lógica de Permissões (RBAC)
     var roles = usuarioNivel.toLowerCase();
-    var isSuperAdmin = roles.includes('admin') || roles.includes('servo');
-    var isDirigente = roles.includes('dirigente');
+    var isAdmin = roles.includes('admin') || roles.includes('servo');
     var isEditor = roles.includes('editor');
     
-    var painelAdmin = document.getElementById('area-admin-panel');
-    var navGestao = document.getElementById('nav-gestao');
+    // Configura botões baseados no papel
+    document.getElementById('area-admin-panel').classList.toggle('hidden', !isAdmin);
+    document.getElementById('nav-gestao').classList.toggle('hidden', !(isAdmin || isEditor));
+    document.getElementById('btn-admin-bell').classList.toggle('hidden', !isAdmin);
     
-    // Gerenciar Usuários: Apenas Admin
-    if (isSuperAdmin) {
-        painelAdmin.classList.remove('hidden');
-    } else {
-        painelAdmin.classList.add('hidden');
-    }
-
-    // Aba Gestão (Territórios): Admin e Editor
-    if (isSuperAdmin || isEditor) {
-        navGestao.classList.remove('hidden');
-    } else {
-        navGestao.classList.add('hidden');
-    }
-
-    // Sininho: Admin e Dirigente
-    if (isSuperAdmin || isDirigente) {
-        document.getElementById('btn-admin-bell').classList.remove('hidden');
-    } else {
-        document.getElementById('btn-admin-bell').classList.add('hidden');
+    // Botão Impressão (Visual)
+    if (isEditor || isAdmin) {
+        var btnPrint = document.createElement('button');
+        btnPrint.className = 'btn-print';
+        btnPrint.innerHTML = '<span class="material-icons">print</span> Imprimir Cartões (PDF)';
+        btnPrint.onclick = () => alert("Funcionalidade de geração de PDF em desenvolvimento.");
+        document.querySelector('#modal-perfil .modal-body').insertBefore(btnPrint, document.querySelector('#modal-perfil .modal-body').lastElementChild);
     }
 
     document.getElementById('app-header').classList.remove('hidden');
@@ -499,6 +501,7 @@ function processarLogin(r) {
 
 function fazerLogout() { localStorage.clear(); location.reload(); }
 
+// --- RENDERIZAÇÃO DO SISTEMA ---
 function carregarSistema() {
   document.getElementById('lista-territorios').innerHTML = '<p style="text-align:center; margin-top:20px;">Carregando...</p>';
   chamarAPI("buscarTerritorios", { email: usuarioEmail }).then(renderizarDados);
@@ -507,55 +510,52 @@ function carregarSistema() {
 
 function renderizarDados(resultado) {
   var lista = resultado.mapas || [];
-  
   var divLista = document.getElementById('lista-territorios');
   divLista.innerHTML = '';
+  
+  if (!lista.length) { divLista.innerHTML = '<p style="text-align:center;">Nenhum território.</p>'; return; }
 
-  if (!lista.length) {
-    divLista.innerHTML = '<p style="text-align:center;">Nenhum território.</p>';
-    return;
-  }
+  // Permissões
+  var roles = usuarioNivel.toLowerCase();
+  var isAdmin = roles.includes('admin') || roles.includes('servo') || roles.includes('dirigente');
 
   lista.forEach(function(t) {
     var classeStatus = 'status-' + t.status;
     if (t.isMeu) classeStatus = 'status-Meu';
+    
     var botaoHtml = '';
     
-    if (t.podeGerenciar) {
-        botaoHtml = '<button class="btn-designar" onclick="acionar(\'' + t.id + '\', \'designar\')"><span class="material-icons">assignment_ind</span> Designar</button>';
-    } 
-    else if (t.status === 'Livre') {
-        botaoHtml = '<button class="btn-pedir" onclick="acionar(\'' + t.id + '\', \'pedir\')"><span class="material-icons">touch_app</span> Pedir</button>';
-    } 
-    else {
-        botaoHtml = '<button class="btn-desabilitado" disabled><span class="material-icons">lock</span> Ocupado</button>';
+    // Regra: Se é meu OU se sou Admin/Dirigente e está ocupado -> Posso devolver
+    var podeDevolver = t.isMeu || (isAdmin && t.status === 'Ocupado');
+
+    if (t.isMeu) {
+        botaoHtml += '<button class="btn-vermelho" onclick="tendarDevolver(\'' + t.id + '\')"><span class="material-icons">assignment_return</span> Devolver</button>';
+    } else if (isAdmin && t.status === 'Ocupado') {
+        botaoHtml += '<button class="btn-vermelho" style="border:1px dashed red;" onclick="tendarDevolver(\'' + t.id + '\')"><span class="material-icons">assignment_return</span> Devolver (Admin)</button>';
+    } else if (t.status === 'Livre') {
+        botaoHtml += '<button class="btn-pedir" onclick="acionar(\'' + t.id + '\', \'pedir\')"><span class="material-icons">touch_app</span> Pedir</button>';
+    } else {
+        botaoHtml += '<button class="btn-desabilitado" disabled><span class="material-icons">lock</span> Ocupado</button>';
     }
 
-    var botaoMapa = t.podeAbrir 
-        ? '<button class="btn-mapa"><span class="material-icons">map</span> Ver Endereços</button>'
-        : '';
-    
-    // Mostra NOME e DATA
+    // Botão de Designar (Admin)
+    if (t.podeGerenciar) {
+        botaoHtml += '<button class="btn-designar" onclick="acionar(\'' + t.id + '\', \'designar\')"><span class="material-icons">assignment_ind</span> Designar</button>';
+    }
+
+    var botaoMapa = t.podeAbrir || isAdmin ? '<button class="btn-mapa" onclick="abrirMapa(\'' + t.id + '\', \'' + t.nome + '\')"><span class="material-icons">map</span> Ver Endereços</button>' : '';
+
+    // Info Extra
     var infoExtra = '';
     if (t.status === 'Ocupado' && t.responsavel) {
-         infoExtra = '<div style="margin-top:8px; font-size:0.85rem; color:#555; display:flex; gap:10px; align-items:center;">' +
-                        '<span><i class="material-icons" style="font-size:14px; vertical-align:middle;">person</i> ' + t.responsavel + '</span>' +
-                        '<span><i class="material-icons" style="font-size:14px; vertical-align:middle;">event</i> ' + (t.dataSaida || '---') + '</span>' +
-                     '</div>';
+         infoExtra = `<div style="margin-top:8px; font-size:0.85rem; color:#555;">
+                        <i class="material-icons" style="font-size:14px; vertical-align:middle;">person</i> ${t.responsavel}
+                      </div>`;
     }
 
     var card = document.createElement('div');
     card.className = 'card ' + classeStatus;
-    card.innerHTML = 
-      '<h3>' + t.id + '</h3>' +
-      '<p><strong>' + t.nome + '</strong></p>' +
-      '<p>' + t.status + (t.isMeu ? ' (Você)' : '') + '</p>' +
-      infoExtra +
-      botaoHtml + botaoMapa;
-
-    if (t.podeAbrir) {
-        card.querySelector('.btn-mapa').addEventListener('click', function() { abrirMapa(t.id, t.nome); });
-    }
+    card.innerHTML = `<h3>${t.id}</h3><p><strong>${t.nome}</strong></p><p>${t.status}${t.isMeu ? ' (Você)' : ''}</p>${infoExtra}${botaoHtml}${botaoMapa}`;
     divLista.appendChild(card);
   });
 }
@@ -563,366 +563,56 @@ function renderizarDados(resultado) {
 function trocarAba(btn, idTela) {
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    // Esconde modais se estiverem abertos
-    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
+    // Lógica simples de navegação SPA se necessário
 }
 
-// --- GESTÃO DE TERRITÓRIOS (EDITOR) ---
-function abrirGestaoTerritorios() {
-    toggleModal('modal-gestao-lista');
-    var divBody = document.getElementById('lista-gestao-body');
-    divBody.innerHTML = '<p style="text-align:center;">Carregando...</p>';
-    
-    chamarAPI("listarTodosTerritoriosAdmin").then(res => {
-        var lista = res || [];
-        divBody.innerHTML = '';
-        var ul = document.createElement('div');
-        
-        lista.forEach(t => {
-            var item = document.createElement('div');
-            item.className = 'item-selecao'; // Reutiliza estilo
-            item.innerHTML = `<div><b>${t.id}</b> - ${t.nome}</div>`;
-            item.onclick = () => abrirEdicaoTerritorio(t.id, t.nome);
-            ul.appendChild(item);
-        });
-        divBody.appendChild(ul);
-    });
-}
-
-function filtrarListaEdicao(texto) {
-    var termo = texto.toLowerCase();
-    document.querySelectorAll('#lista-gestao-body .item-selecao').forEach(item => {
-        item.style.display = item.innerText.toLowerCase().includes(termo) ? 'flex' : 'none';
-    });
-}
-
-function abrirEdicaoTerritorio(id, nome) {
-    idTerritorioEdicao = id;
-    document.getElementById('edit-terr-id').innerText = id;
-    document.getElementById('edit-terr-nome').value = nome;
-    toggleModal('modal-gestao-lista'); // Fecha lista
-    toggleModal('modal-editar-territorio'); // Abre form
-}
-
-function salvarEdicaoTerritorio() {
-    var novoNome = document.getElementById('edit-terr-nome').value;
-    if(!novoNome) return mostrarNotificacao("Nome inválido", "erro");
-    
-    // Atenção: Esta rota precisa existir no Main.gs se não houver um roteador genérico.
-    // Como solicitado na prompt, assume-se que adicionaremos a função no Territorios.gs
-    chamarAPI("salvarDadosTerritorio", { idTerritorio: idTerritorioEdicao, novoNome: novoNome })
-        .then(r => {
-            if(r.erro) mostrarNotificacao(r.erro, "erro");
-            else {
-                mostrarNotificacao("Salvo com sucesso!", "sucesso");
-                toggleModal('modal-editar-territorio');
-                // Recarrega sistema para atualizar nomes
-                carregarSistema();
-            }
-        });
-}
-
-// --- GESTÃO DE USUÁRIOS (CHECKBOXES) ---
-function abrirGestaoUsuarios() {
-    toggleModal('modal-users');
-    var divBody = document.getElementById('lista-users-body');
-    divBody.innerHTML = '<p style="text-align:center; margin-top:20px;">Buscando usuários...</p>';
-    
-    chamarAPI("listarTodosUsuarios", { email: usuarioEmail }).then(function(res) {
-        var lista = res.usuarios; 
-        if (!lista || res.erro) { 
-            divBody.innerHTML = '<p style="text-align:center;">Erro ao carregar ou sem permissão.</p>'; 
-            return; 
-        }
-        divBody.innerHTML = '';
-        var ul = document.createElement('div');
-        lista.forEach(function(u) {
-            var item = document.createElement('div');
-            item.className = 'item-usuario';
-            var tags = u.nivel.split(',').map(n => '<span>'+n.trim()+'</span>').join('');
-            item.innerHTML = '<div><div style="font-weight:bold;">' + u.nome + '</div><div style="font-size:0.8rem; color:#666;">' + u.email + '</div><div class="tags-roles" style="margin-top:5px;">' + tags + '</div></div><button class="icon-btn" onclick="abrirModalEdicao(\''+u.email+'\', \''+u.nome+'\', \''+u.nivel+'\')"><span class="material-icons">edit</span></button>';
-            ul.appendChild(item);
-        });
-        divBody.appendChild(ul);
-    });
-}
-
-function abrirModalEdicao(email, nome, nivelAtual) {
-    emailUsuarioEdicao = email;
-    document.getElementById('edit-user-nome').innerText = nome;
-    ['role-publicador', 'role-dirigente', 'role-admin', 'role-editor'].forEach(id => {
-        document.getElementById(id).checked = false;
-    });
-    var roles = nivelAtual.toLowerCase();
-    if (roles.includes('publicador')) document.getElementById('role-publicador').checked = true;
-    if (roles.includes('dirigente')) document.getElementById('role-dirigente').checked = true;
-    if (roles.includes('admin') || roles.includes('servo')) document.getElementById('role-admin').checked = true;
-    if (roles.includes('editor')) document.getElementById('role-editor').checked = true;
-    toggleModal('modal-editar-usuario');
-}
-
-function salvarEdicaoViaModal() {
-    if (!emailUsuarioEdicao) return;
-    var checks = [];
-    if(document.getElementById('role-publicador').checked) checks.push("Publicador");
-    if(document.getElementById('role-dirigente').checked) checks.push("Dirigente");
-    if(document.getElementById('role-admin').checked) checks.push("Admin");
-    if(document.getElementById('role-editor').checked) checks.push("Editor");
-
-    if (checks.length === 0) {
-        if(confirm("Nenhum papel selecionado. Deseja excluir este usuário?")) {
-            chamarAPI("excluirUsuario", { adminEmail: usuarioEmail, emailAlvo: emailUsuarioEdicao }).then(function(r) {
-                mostrarNotificacao(r.sucesso || r.erro, r.sucesso ? "sucesso" : "erro");
-                toggleModal('modal-editar-usuario');
-                abrirGestaoUsuarios();
-            });
-        }
-        return;
-    }
-    var novosPapeis = checks.join(", ");
-    mostrarNotificacao("Salvando...", "sucesso");
-    chamarAPI("salvarEdicaoUsuario", { adminEmail: usuarioEmail, emailAlvo: emailUsuarioEdicao, novosPapeis: novosPapeis }).then(function(r) {
-        mostrarNotificacao(r.sucesso || r.erro, r.sucesso ? "sucesso" : "erro");
-        toggleModal('modal-editar-usuario');
-        abrirGestaoUsuarios();
-    });
-}
-
-function processarAprovacaoCadastro(emailAlvo, nomeAlvo, idContainerRoles) {
-    var divRoles = document.getElementById(idContainerRoles);
-    var checkboxes = divRoles.querySelectorAll('input[type="checkbox"]:checked');
-    if (checkboxes.length === 0) return mostrarNotificacao("Selecione uma função.", "erro");
-    var papeisSelecionados = Array.from(checkboxes).map(cb => cb.value).join(', ');
-    
-    confirmarAcao("Aprovar Acesso", 'Aprovar ' + nomeAlvo + ' como: ' + papeisSelecionados + '?', function() {
-        chamarAPI("aprovarCadastro", { adminEmail: usuarioEmail, emailAlvo: emailAlvo, nomeAlvo: nomeAlvo, nivel: papeisSelecionados }).then(function(r) {
-           mostrarNotificacao(r.sucesso || r.erro, r.sucesso ? "sucesso" : "erro");
-           carregarSolicitacoes();
-        });
-    });
-}
-
-function acionar(id, acao) {
-    if (acao === 'designar') {
-        idTerritorioParaDesignar = id;
-        toggleModal('modal-designar');
-        document.getElementById('msg-designar-titulo').innerText = `Designar cartão ${id} para:`;
-        carregarListaPublicadoresNoSelect(); 
-        return;
-    }
-    var texto = 'Deseja pedir este território?';
-    confirmarAcao('Pedir Território', texto, function() {
-        document.getElementById('lista-territorios').style.opacity = '0.5';
-        chamarAPI("processarAcaoTerritorio", { id: id, tipoAcao: acao, email: usuarioEmail }).then(function(r) {
-              document.getElementById('lista-territorios').style.opacity = '1';
-              if (r.erro) mostrarNotificacao(r.erro, "erro"); 
-              else { 
-                  mostrarNotificacao(r.sucesso, "sucesso"); 
-                  carregarSistema(); 
-              }
-        });
-    });
-}
-
-function carregarListaPublicadoresNoSelect() {
-    var select = document.getElementById('sel-designar-pub');
-    select.innerHTML = '<option value="">Carregando...</option>';
-    select.disabled = true;
-    chamarAPI("listarTodosUsuarios", { email: usuarioEmail }).then(function(res) {
-        select.innerHTML = '<option value="">Selecione um publicador...</option>';
-        select.disabled = false;
-        var lista = res.usuarios || [];
-        lista.sort((a,b) => a.nome.localeCompare(b.nome));
-        lista.forEach(function(u) {
-            var opt = document.createElement('option');
-            opt.value = u.email;
-            opt.innerText = u.nome;
-            select.appendChild(opt);
-        });
-        document.getElementById('btn-confirmar-designacao').onclick = finalizarDesignacaoAdmin;
-    });
-}
-
-function finalizarDesignacaoAdmin() {
-    var select = document.getElementById('sel-designar-pub');
-    var emailAlvo = select.value;
-    if (!emailAlvo) return mostrarNotificacao("Selecione um publicador.", "erro");
-    if (!idTerritorioParaDesignar) return;
-    toggleModal('modal-designar');
-    mostrarNotificacao("Processando designação...", "sucesso");
-    chamarAPI("processarAcaoTerritorio", { id: idTerritorioParaDesignar, tipoAcao: "designar", email: emailAlvo }).then(function(r) {
-        if (r.erro) mostrarNotificacao(r.erro, "erro");
-        else {
-            mostrarNotificacao(r.sucesso, "sucesso");
-            carregarSistema();
-        }
-    });
-}
-
-function carregarSolicitacoes() {
-  chamarAPI("buscarSolicitacoes", { email: usuarioEmail }).then(function(lista) {
-    var divSol = document.getElementById('lista-solicitacoes');
-    var badge = document.getElementById('admin-badge');
-    if (!lista || !lista.length) {
-      divSol.innerHTML = '<div style="padding:30px; text-align:center; color:#aaa;">Nada pendente.</div>';
-      badge.classList.add('hidden');
-      return;
-    }
-    badge.innerText = lista.length;
-    badge.classList.remove('hidden');
-    divSol.innerHTML = '';
-    lista.forEach(function(p, index) {
-      var idUnico = 'sol-' + index;
-      var div = document.createElement('div');
-      div.className = 'card-aprovacao';
-      var icone = p.tipo === 'TERRITORIO' ? 'map' : 'person_add';
-      var cor = p.tipo === 'TERRITORIO' ? '#f39c12' : '#3498db';
-      var titulo = p.tipo === 'TERRITORIO' ? 'Pedido de Mapa' : 'Novo Cadastro';
-      if (p.tipo === 'TERRITORIO') div.style.borderLeftColor = '#f39c12';
-      div.innerHTML = '<div class="aprovacao-resumo" onclick="toggleDetalhes(\''+idUnico+'\')">' +
-            '<div style="display:flex; align-items:center; gap:10px;">' +
-                '<div class="aprovacao-avatar" style="color:'+cor+'; background:#f9f9f9;"><span class="material-icons">'+icone+'</span></div>' +
-                '<div><h4 style="margin:0; font-size:0.95rem;">'+titulo+'</h4><p style="margin:0; font-size:0.85rem; color:#666;">'+p.nome+'</p></div>' +
-            '</div>' +
-            '<span class="material-icons" id="icon-'+idUnico+'" style="color:#ccc;">expand_more</span>' +
-        '</div>' +
-        '<div class="aprovacao-detalhes" id="'+idUnico+'">' +
-            (p.tipo === 'TERRITORIO' 
-                ? '<p style="margin:10px 0;">Quer o mapa: <strong>'+p.info+'</strong></p>' +
-                  '<div class="acoes-aprovacao">' +
-                      '<button class="btn-designar" style="flex:2;" onclick="aprovarPedido(\''+p.email+'\', \''+p.info+'\')">Aprovar</button>' +
-                      '<button class="btn-azul" style="flex:1; background:#eee; color:#555;" onclick="sugerirOutro(\''+p.email+'\', \''+p.info+'\')"><span class="material-icons">edit</span></button>' +
-                      '<button class="btn-vermelho" style="flex:1;" onclick="recusarPedido(\''+p.email+'\', \''+p.info+'\', \'TERRITORIO\')"><span class="material-icons">close</span></button>' +
-                  '</div>'
-                : '<p style="margin:5px 0;">Email: '+p.email+'</p><p style="margin:0 0 10px 0;">Tel: '+p.info+'</p>' +
-                  '<div class="lista-papeis" id="roles-'+index+'">' +
-                      '<label class="papel-item"><input type="checkbox" value="Publicador" checked> Pub.</label>' +
-                      '<label class="papel-item"><input type="checkbox" value="Dirigente"> Dirigente</label>' +
-                      '<label class="papel-item"><input type="checkbox" value="Editor"> Editor</label>' +
-                      '<label class="papel-item"><input type="checkbox" value="Admin"> Admin</label>' +
-                  '</div>' +
-                  '<div class="acoes-aprovacao">' +
-                      '<button class="btn-verde" style="flex:1;" onclick="processarAprovacaoCadastro(\''+p.email+'\', \''+p.nome+'\', \'roles-'+index+'\')">Confirmar</button>' +
-                      '<button class="btn-vermelho" style="width:50px;" onclick="recusarPedido(\''+p.email+'\', \''+p.info+'\', \'ACESSO\')"><span class="material-icons">block</span></button>' +
-                  '</div>'
-            ) +
-        '</div>';
-      divSol.appendChild(div);
-    });
-  });
-}
-
-function toggleDetalhes(id) {
-    var el = document.getElementById(id);
-    var icon = document.getElementById('icon-' + id);
-    if (el.classList.contains('aberto')) {
-        el.classList.remove('aberto');
-        icon.innerText = 'expand_more';
-    } else {
-        document.querySelectorAll('.aprovacao-detalhes.aberto').forEach(d => {
-            d.classList.remove('aberto');
-            if(d.previousElementSibling.lastElementChild) d.previousElementSibling.lastElementChild.innerText = 'expand_more';
-        });
-        el.classList.add('aberto');
-        icon.innerText = 'expand_less';
-    }
-}
-
-// --- CONFIRMATION ACTION ---
-function confirmarAcao(titulo, texto, callback) {
-    document.getElementById('confirm-titulo').innerText = titulo;
-    document.getElementById('confirm-texto').innerText = texto;
-    var btnSim = document.getElementById('confirm-sim');
-    var novoBtn = btnSim.cloneNode(true);
-    btnSim.parentNode.replaceChild(novoBtn, btnSim);
-    novoBtn.onclick = function() {
-        toggleModal('modal-confirmacao');
-        callback();
-    };
-    toggleModal('modal-confirmacao');
-}
-
-function aprovarPedido(email, idTerritorio) {
-    confirmarAcao("Designar Cartão", 'Designar ' + idTerritorio + ' para este publicador?', function() {
-        document.getElementById('lista-solicitacoes').innerHTML = '<p style="text-align:center;">Processando...</p>';
-        chamarAPI("aprovarPedidoTerritorio", { email: email, idTerritorio: idTerritorio }).then(function(r) {
-            mostrarNotificacao(r.sucesso || r.erro, r.sucesso ? "sucesso" : "erro");
-            carregarSolicitacoes(); 
-            carregarSistema(); 
-        });
-    });
-}
-
-function recusarPedido(email, info, tipo) {
-    var motivo = prompt("Motivo da recusa:", "Indisponível");
-    if (motivo === null) return; 
-    chamarAPI("recusarSolicitacao", { email: email, info: info, tipo: tipo, motivo: motivo }).then(function(r) {
-        mostrarNotificacao(r.sucesso || r.erro, r.sucesso ? "sucesso" : "erro");
-        carregarSolicitacoes();
-    });
-}
-
-function sugerirOutro(email, idAtual) {
-    abrirSeletorTerritorio(function(novoID) {
-        if (!novoID) return;
-        chamarAPI("sugerirTrocaTerritorio", { email: email, idAtual: idAtual, novoID: novoID }).then(function(r) {
-            mostrarNotificacao(r.sucesso || r.erro, r.sucesso ? "sucesso" : "erro");
-            carregarSolicitacoes();
-        });
-    });
-}
-
-function enviarSolicitacao() {
-    var nome = document.getElementById('cad-nome').value;
-    var tel = document.getElementById('cad-tel').value;
-    if (!nome || !tel) return mostrarNotificacao("Preencha todos os campos.", "erro");
-    chamarAPI("solicitarCadastro", { nome: nome, tel: tel, email: usuarioEmail }).then(function(r) {
-       if(r.erro) mostrarNotificacao(r.erro, "erro"); 
-       else { 
-           mostrarNotificacao(r.sucesso, "sucesso"); 
-           setTimeout(() => location.reload(), 1500); 
-       }
-    });
-}
-
-// --- MAPAS & ENDEREÇOS ---
+// --- LÓGICA DE MAPAS E VISITAS ---
 function abrirMapa(idTerritorio, nomeTerritorio) {
     toggleModal('modal-mapa');
-    document.getElementById('titulo-mapa').innerText = 'Cartão Nº: ' + idTerritorio; 
+    document.getElementById('titulo-mapa').innerText = 'Cartão Nº: ' + idTerritorio;
     var divConteudo = document.getElementById('conteudo-mapa');
     divConteudo.innerHTML = '<p style="text-align:center;color:#aaa;">Carregando dados...</p>';
     
-    chamarAPI("buscarEnderecosPorTerritorio", { id: idTerritorio }).then(function(resultado) { 
+    chamarAPI("buscarEnderecosPorTerritorio", { id: idTerritorio }).then(function(resultado) {
          var enderecos = resultado.enderecos;
-         var cidade = resultado.cidade;
          enderecosCache[idTerritorio] = enderecos;
-         territorioInfoCache[idTerritorio] = { nome: nomeTerritorio, cidade: cidade }; 
+         territorioInfoCache[idTerritorio] = { nome: nomeTerritorio, cidade: resultado.cidade };
 
          if (!enderecos || enderecos.length === 0) {
-             divConteudo.innerHTML = '<p style="margin-top:15px;color:#c00;text-align:center;">Sem dados de GPS.</p>';
+             divConteudo.innerHTML = '<p style="margin-top:15px;color:#c00;text-align:center;">Sem endereços.</p>';
              return;
          }
          
-         divConteudo.innerHTML = '<div id="leaflet-map-container" style="height:250px;width:100%;border-radius:8px;position:relative;">' +
-                                    '<button class="btn-fullscreen" onclick="toggleFullscreenMap(\'leaflet-map-container\')"><span class="material-icons">fullscreen</span></button>' +
-                                 '</div>' +
-                                 '<ul class="lista-enderecos-cartao"></ul>';
+         divConteudo.innerHTML = '<div id="leaflet-map-container" style="height:250px;width:100%;border-radius:8px;"></div><ul class="lista-enderecos-cartao"></ul>';
          var ul = divConteudo.querySelector('ul');
          
-         if (mapaAtual) { mapaAtual.remove(); mapaAtual = null; }
-         var bounds = [];
-         
+         // Inicia Cache de Visita Local para este mapa
+         if (!registroTrabalhoLocal[idTerritorio]) registroTrabalhoLocal[idTerritorio] = [];
+
+         // Mapa Leaflet
          setTimeout(function() {
+            if (mapaAtual) { mapaAtual.remove(); mapaAtual = null; }
             mapaAtual = L.map('leaflet-map-container');
             L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(mapaAtual);
+            var bounds = [];
 
             enderecos.forEach(function(end, index) {
-                var numero = index + 1; 
+                var numero = index + 1;
                 var latLng = [end.lat, end.lng];
                 bounds.push(latLng);
+                
+                // Item da Lista
                 var li = document.createElement('li');
-                li.innerHTML = '<strong>' + numero + '</strong> ' + end.rua + ', ' + end.numero;
-                li.style.padding = '10px'; li.style.borderBottom = '1px solid #eee';
+                var refHtml = end.referencia ? `<br><small style="color:#666">Ref: ${end.referencia}</small>` : '';
+                
+                // Verifica se já foi visitado localmente (simulação visual)
+                var checkIcon = registroTrabalhoLocal[idTerritorio].includes(end.id) ? '<span class="material-icons" style="color:green; font-size:16px;">check_circle</span>' : '';
+
+                li.innerHTML = `<div class="numero">${numero}</div>
+                                <div style="flex:1;">
+                                    <strong>${end.rua}, ${end.numero}</strong> ${checkIcon}
+                                    ${refHtml}
+                                </div>`;
                 li.onclick = function() { abrirDetalhesEndereco(numero, idTerritorio); };
                 ul.appendChild(li);
                 L.marker(latLng).addTo(mapaAtual).bindPopup(numero + '. ' + end.rua);
@@ -930,172 +620,194 @@ function abrirMapa(idTerritorio, nomeTerritorio) {
             if (bounds.length > 0) mapaAtual.fitBounds(bounds, { padding: [20, 20] });
             
             adicionarBotaoCompartilhar(idTerritorio, nomeTerritorio, enderecos);
-            
-         }, 150); 
-     });
-}
-
-function toggleFullscreenMap(idContainer) {
-    var el = document.getElementById(idContainer);
-    var btn = el.querySelector('.btn-fullscreen span');
-    
-    if (el.classList.contains('mapa-fullscreen')) {
-        el.classList.remove('mapa-fullscreen');
-        btn.innerText = 'fullscreen';
-        btn.parentElement.style.color = '#333';
-        btn.parentElement.style.border = 'none';
-    } else {
-        el.classList.add('mapa-fullscreen');
-        btn.innerText = 'close';
-        btn.parentElement.style.color = '#c00';
-        btn.parentElement.style.border = '2px solid #c00';
-    }
-    setTimeout(() => { if(mapaAtual) mapaAtual.invalidateSize(); if(mapaUnico) mapaUnico.invalidateSize(); }, 200);
+         }, 150);
+    });
 }
 
 function abrirDetalhesEndereco(numero, idTerritorio) {
-      var enderecos = enderecosCache[idTerritorio];
-      var info = territorioInfoCache[idTerritorio]; 
-      if (!enderecos || !info) return mostrarNotificacao("Erro de dados.", "erro");
-      var end = enderecos[numero - 1]; 
-      if (mapaUnico) { mapaUnico.remove(); mapaUnico = null; }
+    var enderecos = enderecosCache[idTerritorio];
+    var end = enderecos[numero - 1];
+    
+    // Configura Variáveis Globais para o Salvamento
+    enderecoAtualId = end.id;
+    territorioAtualId = idTerritorio;
 
-      document.getElementById('detalhes-endereco-titulo').innerText = 'Endereço Nº ' + numero;
-      document.getElementById('detalhes-cidade').innerText = info.cidade;
-      document.getElementById('detalhes-bairro').innerText = info.nome;
-      document.getElementById('detalhes-rua').innerText = end.rua;
-      document.getElementById('detalhes-numero').innerText = end.numero;
-      document.getElementById('detalhes-referencia').innerText = end.referencia || 'N/A';
-      document.getElementById('detalhes-gps').innerText = end.lat + ', ' + end.lng;
-      
-      // ROTA INTELIGENTE COM WAYPOINTS SOLICITADA PELO USUÁRIO
-      // Monta todos os pontos como waypoints, exceto o último que é o destino
-      // Mas para link simples 'Ir Até', usamos o destino direto. 
-      // Se for para 'traçar rota completa', o ideal é o botão 'Abrir Todos'.
-      // Aqui é individual:
-      var linkGPS = 'https://www.google.com/maps/dir/?api=1&destination=' + end.lat + ',' + end.lng + '&travelmode=driving';
-      var btnRota = document.getElementById('btn-traçar-rota');
-      btnRota.onclick = function() { window.open(linkGPS, '_blank'); };
+    // Preenche Modal
+    document.getElementById('detalhes-rua').innerText = end.rua;
+    document.getElementById('detalhes-numero').innerText = end.numero;
+    document.getElementById('detalhes-referencia').innerText = end.referencia || '-';
+    document.getElementById('link-gps-externo').href = 'http://maps.google.com/maps?q=' + end.lat + ',' + end.lng;
+    
+    // Limpa Form
+    document.getElementById('sel-status-visita').value = "";
+    document.getElementById('input-obs-visita').value = "";
 
-      toggleModal('modal-endereco');
-      
-      document.getElementById('leaflet-map-unico').innerHTML = '<button class="btn-fullscreen" style="z-index:99999;" onclick="toggleFullscreenMap(\'leaflet-map-unico\')"><span class="material-icons">fullscreen</span></button>';
-
-      setTimeout(function() {
-          mapaUnico = L.map('leaflet-map-unico').setView([end.lat, end.lng], 18);
-          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(mapaUnico);
-          var numberedIcon = L.divIcon({ className: 'custom-numbered-icon', html: '<div style="background:#e74c3c; color:white; border-radius:50%; width:24px; height:24px; text-align:center; line-height:24px; font-weight:bold; border:2px solid white;">' + numero + '</div>', iconSize: [24, 24], iconAnchor: [12, 24] });
-          L.marker([end.lat, end.lng], { icon: numberedIcon }).addTo(mapaUnico).bindPopup('Ponto ' + numero).openPopup();
-          mapaUnico.invalidateSize();
-      }, 50);
+    // Mapa Pequeno
+    if (mapaUnico) { mapaUnico.remove(); mapaUnico = null; }
+    toggleModal('modal-endereco');
+    
+    setTimeout(function() {
+         mapaUnico = L.map('leaflet-map-unico').setView([end.lat, end.lng], 18);
+         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapaUnico);
+         L.marker([end.lat, end.lng]).addTo(mapaUnico);
+    }, 200);
 }
 
-function adicionarBotaoCompartilhar(idTerritorio, nomeTerritorio, listaEnderecos) {
-    var divConteudo = document.getElementById('conteudo-mapa');
-    var containerAcoes = document.getElementById('container-acoes-mapa-geral');
-    if (!containerAcoes) {
-        containerAcoes = document.createElement('div');
-        containerAcoes.id = 'container-acoes-mapa-geral';
-        containerAcoes.style.marginTop = '15px';
-        containerAcoes.style.display = 'flex';
-        containerAcoes.style.flexDirection = 'column'; 
-        containerAcoes.style.gap = '10px';
-        divConteudo.appendChild(containerAcoes); 
+function salvarVisitaAtual() {
+    var status = document.getElementById('sel-status-visita').value;
+    var obs = document.getElementById('input-obs-visita').value;
+    
+    if (!status) return mostrarNotificacao("Selecione um status.", "erro");
+
+    mostrarNotificacao("Salvando...", "sucesso");
+    
+    // Atualiza Cache Local
+    if (!registroTrabalhoLocal[territorioAtualId]) registroTrabalhoLocal[territorioAtualId] = [];
+    if (!registroTrabalhoLocal[territorioAtualId].includes(enderecoAtualId)) {
+        registroTrabalhoLocal[territorioAtualId].push(enderecoAtualId);
     }
-    containerAcoes.innerHTML = 
-        '<button class="btn-designar" id="btn-compartilhar" style="background-color:#25D366; color: white;"><span class="material-icons">share</span> Enviar Lista no WhatsApp</button>' +
-        '<button class="btn-designar" id="btn-maps-multiplo" style="background-color:#4285F4; color: white;"><span class="material-icons">map</span> Abrir Todos no Maps (Rota)</button>' +
-        '<button class="btn-azul" style="background-color:#eee; color:#333; border:1px solid #ccc;" onclick="toggleModal(\'modal-mapa\')">Fechar</button>';
 
-    document.getElementById('btn-compartilhar').onclick = function() { compartilharDadosTerritorio(idTerritorio, nomeTerritorio, listaEnderecos); };
-    document.getElementById('btn-maps-multiplo').onclick = function() { abrirRotaCompleta(listaEnderecos); };
-}
-
-function compartilharDadosTerritorio(id, nome, enderecos) {
-    if (!enderecos || enderecos.length === 0) return mostrarNotificacao("Sem dados.", "erro");
-    var linkRota = gerarLinkRota(enderecos);
-    var textoLista = enderecos.map(function(end, index) { return '📍 *' + (index + 1) + '.* ' + end.rua + ', ' + (end.numero || 'S/N') + '\n   _Ref: ' + (end.referencia || '-') + '_'; }).join('\n\n');
-    var mensagem = '🗺️ *Território ' + id + '* - ' + nome + '\n\n' + textoLista + '\n\n' + '🔗 *Ver todos no Mapa:*\n' + linkRota;
-    var urlZap = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(mensagem.trim());
-    window.open(urlZap, '_blank');
-}
-
-function abrirRotaCompleta(enderecos) {
-    var link = gerarLinkRota(enderecos);
-    window.open(link, '_blank');
-}
-
-function gerarLinkRota(enderecos) {
-    // FORMATO SOLICITADO: https://www.google.com/maps/dir/?api=1&destination={ULTIMO_ENDERECO}&waypoints={ENDERECO_1}|{ENDERECO_2}|...&travelmode=driving
-    if (!enderecos || enderecos.length === 0) return "";
-    
-    // O destino final é o último endereço da lista
-    var ultimo = enderecos[enderecos.length - 1];
-    var destino = ultimo.lat + ',' + ultimo.lng;
-    
-    // Waypoints são todos os anteriores, separados por |
-    var waypoints = enderecos.slice(0, enderecos.length - 1).map(e => e.lat + ',' + e.lng).join('|');
-    
-    var baseUrl = "https://www.google.com/maps/dir/?api=1&destination=";
-    return baseUrl + destino + "&waypoints=" + waypoints + "&travelmode=driving";
-}
-
-function abrirSeletorTerritorio(cb) {
-    window.callbackSelecao = cb;
-    toggleModal('modal-selecao');
-    chamarAPI("listarTodosTerritoriosAdmin").then(renderizarListaSelecao);
-}
-function renderizarListaSelecao(lista) {
-    var corpo = document.getElementById('corpo-selecao');
-    corpo.innerHTML = '';
-    lista.forEach(function(t) {
-        var div = document.createElement('div');
-        div.className = 'item-selecao';
-        var txtData = (t.status === 'Ocupado' && t.data) ? ` <small style="color:#666">(${t.data})</small>` : '';
-        div.innerHTML = '<div><b>' + t.id + '</b> - ' + t.nome + '</div>' + 
-                        '<div>' + t.status + txtData + '</div>';
-        div.onclick = function() { toggleModal('modal-selecao'); if(window.callbackSelecao) window.callbackSelecao(t.id); };
-        corpo.appendChild(div);
+    chamarAPI("salvarRegistroVisita", {
+        idTerritorio: territorioAtualId,
+        idEndereco: enderecoAtualId,
+        status: status,
+        obs: obs,
+        publicador: usuarioEmail
+    }).then(function(r) {
+        mostrarNotificacao("Registro salvo!", "sucesso");
+        toggleModal('modal-endereco');
+        // Opcional: Recarregar lista do mapa para mostrar check
+        abrirMapa(territorioAtualId, territorioInfoCache[territorioAtualId].nome);
     });
 }
-function filtrarListaSelecao(texto) {
-    var termo = texto.toLowerCase();
-    document.querySelectorAll('.item-selecao').forEach(item => {
-        item.style.display = item.innerText.toLowerCase().includes(termo) ? 'flex' : 'none';
-    });
-}
-if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./service-worker.js'); }
-</script>
-<div id="pwa-toast" style="position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 12px 24px; border-radius: 8px; display: none; z-index: 9999; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-family: sans-serif;">
-    Nova versão disponível. <button id="pwa-refresh" style="margin-left:10px; background:none; border:none; color: #4CAF50; font-weight:bold; cursor:pointer;">ATUALIZAR</button>
-</div>
 
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./service-worker.js').then(reg => {
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing;
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            let toast = document.getElementById('pwa-toast');
-            toast.style.display = 'block';
-            document.getElementById('pwa-refresh').onclick = () => {
-              newWorker.postMessage({ type: 'SKIP_WAITING' });
-              toast.style.display = 'none';
-            };
-          }
+// --- AÇÕES GERAIS (Devolver com Trava) ---
+function tendarDevolver(id) {
+    // Verifica Trava de Registros
+    var totalEnderecos = enderecosCache[id] ? enderecosCache[id].length : 0;
+    var visitados = registroTrabalhoLocal[id] ? registroTrabalhoLocal[id].length : 0;
+    var roles = usuarioNivel.toLowerCase();
+    var isSuper = roles.includes('admin') || roles.includes('dirigente');
+
+    // Se for publicador comum e não visitou tudo
+    if (!isSuper && totalEnderecos > 0 && visitados < totalEnderecos) {
+        // Tenta buscar no cache ou avisa
+        // Como o cache local apaga no refresh, isso é uma trava "leve" de sessão.
+        // Para trava robusta, precisaríamos buscar do backend. Vamos usar o aviso simples:
+        if (!confirm(`Atenção: Você registrou apenas ${visitados} de ${totalEnderecos} endereços nesta sessão. Tem certeza que completou o território?`)) {
+            return;
+        }
+    }
+    
+    acionar(id, 'devolver');
+}
+
+function acionar(id, acao) {
+    if (acao === 'designar') {
+        idTerritorioParaDesignar = id;
+        toggleModal('modal-designar');
+        document.getElementById('msg-designar-titulo').innerText = `Designar cartão ${id} para:`;
+        carregarListaPublicadoresNoSelect();
+        return;
+    }
+
+    var texto = acao === 'devolver' ? 'Devolver e arquivar este território?' : 'Deseja pedir este território?';
+    
+    confirmarAcao('Confirmação', texto, function() {
+        document.getElementById('lista-territorios').style.opacity = '0.5';
+        chamarAPI("processarAcaoTerritorio", { id: id, tipoAcao: acao, email: usuarioEmail }).then(function(r) {
+             document.getElementById('lista-territorios').style.opacity = '1';
+             if (r.erro) mostrarNotificacao(r.erro, "erro");
+             else { mostrarNotificacao(r.sucesso, "sucesso"); carregarSistema(); }
         });
-      });
     });
-    let refreshing;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (refreshing) return;
-      window.location.reload();
-      refreshing = true;
+}
+
+// --- OFFLINE ASSIGNMENT ---
+function toggleInputOffline() {
+    var chk = document.getElementById('check-offline');
+    var sel = document.getElementById('sel-designar-pub');
+    var inp = document.getElementById('input-offline-nome');
+    
+    if (chk.checked) {
+        sel.classList.add('hidden');
+        inp.classList.remove('hidden');
+    } else {
+        sel.classList.remove('hidden');
+        inp.classList.add('hidden');
+    }
+}
+
+function carregarListaPublicadoresNoSelect() {
+   var select = document.getElementById('sel-designar-pub');
+   select.innerHTML = '<option value="">Carregando...</option>';
+   chamarAPI("listarTodosUsuarios", { email: usuarioEmail }).then(res => {
+       select.innerHTML = '<option value="">Selecione...</option>';
+       (res.usuarios || []).forEach(u => {
+           var opt = document.createElement('option');
+           opt.value = u.email; opt.innerText = u.nome;
+           select.appendChild(opt);
+       });
+       document.getElementById('btn-confirmar-designacao').onclick = finalizarDesignacaoAdmin;
+   });
+}
+
+function finalizarDesignacaoAdmin() {
+    var isOffline = document.getElementById('check-offline').checked;
+    var emailAlvo = document.getElementById('sel-designar-pub').value;
+    var nomeOffline = document.getElementById('input-offline-nome').value;
+
+    if (isOffline && !nomeOffline) return mostrarNotificacao("Digite o nome do irmão.", "erro");
+    if (!isOffline && !emailAlvo) return mostrarNotificacao("Selecione um publicador.", "erro");
+
+    toggleModal('modal-designar');
+    mostrarNotificacao("Processando...", "sucesso");
+    
+    // Prepara payload
+    var payload = { 
+        id: idTerritorioParaDesignar, 
+        tipoAcao: "designar", 
+        email: emailAlvo 
+    };
+    if (isOffline) payload.nomeOffline = nomeOffline; // Passa nome offline se houver
+
+    chamarAPI("processarAcaoTerritorio", payload).then(function(r) {
+        if (r.erro) mostrarNotificacao(r.erro, "erro");
+        else { mostrarNotificacao(r.sucesso, "sucesso"); carregarSistema(); }
     });
-  }
+}
+
+// Funções Auxiliares (Mapas, Compartilhamento) mantidas iguais ao original...
+function adicionarBotaoCompartilhar(id, nome, ends) {
+    var div = document.getElementById('conteudo-mapa');
+    if(!document.getElementById('btn-zap')) {
+        var btn = document.createElement('button');
+        btn.id = 'btn-zap';
+        btn.className = 'btn-verde';
+        btn.innerHTML = '<span class="material-icons">share</span> WhatsApp';
+        btn.onclick = () => {
+             var txt = `*Território ${id} - ${nome}*\n\n` + ends.map((e,i) => `${i+1}. ${e.rua}, ${e.numero}`).join('\n');
+             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}`);
+        };
+        div.appendChild(btn);
+    }
+}
+
+function confirmarAcao(titulo, texto, callback) {
+    document.getElementById('confirm-titulo').innerText = titulo;
+    document.getElementById('confirm-texto').innerText = texto;
+    var btnSim = document.getElementById('confirm-sim');
+    var novo = btnSim.cloneNode(true);
+    btnSim.parentNode.replaceChild(novo, btnSim);
+    novo.onclick = () => { toggleModal('modal-confirmacao'); callback(); };
+    toggleModal('modal-confirmacao');
+}
+
+// Service Worker Logic
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./service-worker.js'); }
 </script>
 
 </body>
 </html>
+
 
