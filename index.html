@@ -58,9 +58,27 @@
                 }    
         .nav-item.active { color: #3498db; }
         .nav-item .material-icons { font-size: 24px; margin-bottom: 0; line-height: 1; }
-        /* Correção Rodapé Gestão */
-        .nav-item i { margin-bottom: 0px; } /* Remove margem extra */
-        .nav-item span { margin-top: 2px; } /* Ajuste fino */
+           
+        
+        /* --- ESTILO DEFINITIVO DO BOTÃO GESTÃO --- */
+            #nav-gestao {
+                color: #e67e22; /* Laranja discreto para diferenciar de botões comuns */
+            }
+            #nav-gestao .material-icons {
+                margin-bottom: 2px; /* Ajuste fino vertical */
+                font-size: 24px;
+                line-height: 1;
+            }
+            #nav-gestao span {
+                font-size: 0.7rem;
+                margin-top: 0;
+                line-height: 1.2;
+            }
+            /* Estado ativo (quando clicado) */
+            #nav-gestao.active {
+                color: #d35400; 
+                font-weight: bold;
+            }
 
         .icon-btn { background: none; border: none; cursor: pointer; position: relative; color: #555; padding: 5px; }
         .badge { position: absolute; top: 0; right: 0; background: #e74c3c; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; }
@@ -98,9 +116,7 @@
         .toast.sucesso { background-color: #27ae60; }
         .toast.erro { background-color: #e74c3c; }
 
-        /* Ajuste Fino do Botão Gestão */
-        #nav-gestao .material-icons { margin-bottom: 0; line-height: 1; }
-        #nav-gestao span { margin-top: 2px; }
+
 
         /* --- 6. ESTILOS EXTRAS E GESTÃO --- */
         .box-registro-visita { background: #f0f8ff; border: 1px solid #cceeff; border-radius: 8px; padding: 15px; margin-top: 15px; }
@@ -197,10 +213,10 @@
 
     <nav class="app-footer hidden" id="app-footer">
       <button class="nav-item active" onclick="trocarAba(this, 'tela-sistema')"><span class="material-icons">dashboard</span> <span>Cartões</span> </button>
-            <button class="nav-item hidden" id="nav-gestao" onclick="abrirGestaoTerritorios()">
-                <span class="material-icons">folder_managed</span>
-                <span>Gestão</span>
-            </button>
+        <button class="nav-item hidden" id="nav-gestao" onclick="abrirGestaoTerritorios()">
+            <span class="material-icons">folder_managed</span>
+            <span>Gestão</span>
+        </button>
       <button class="nav-item" onclick="toggleModal('modal-perfil')"><span class="material-icons">person</span><span>Perfil</span></button>
     </nav>
 
@@ -726,34 +742,68 @@ function finalizarDesignacao() {
     chamarAPI("processarAcaoTerritorio", payload).then(() => { toggleModal('modal-designar'); carregarSistema(); });
 }
 
+    
 // --- 3. placeholder DA GESTÃO ---
-
 function abrirGestaoTerritorios() {
     toggleModal('modal-gestao-lista');
     var body = document.getElementById('lista-gestao-body');
     
-    // Placeholder visual para evitar tela branca ou erro
+    // 1. Placeholder Visual (Aparece imediatamente)
     body.innerHTML = `
-        <div style="text-align:center; padding:20px; color:#666;">
-            <span class="material-icons" style="font-size:48px; color:#ddd;">build</span>
-            <p><b>Modo de Gestão</b></p>
-            <p style="font-size:0.9rem;">Selecione um território na lista acima (se houver filtro) ou aguarde novas funcionalidades de edição em massa.</p>
+        <div style="text-align:center; padding:40px 20px; color:#95a5a6;">
+            <div style="background:#f0f3f4; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px auto;">
+                <span class="material-icons" style="font-size:32px; color:#bdc3c7;">build_circle</span>
+            </div>
+            <h3 style="margin:0; color:#7f8c8d;">Painel de Dados</h3>
+            <p style="font-size:0.9rem; margin:10px 0;">Carregando lista de territórios para edição...</p>
+            <div style="margin-top:10px;">
+                <span class="material-icons" style="animation:spin 1s linear infinite;">sync</span>
+            </div>
         </div>
-        <p style="text-align:center;">Carregando lista...</p>
+        <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
     `;
 
+    // 2. Busca Dados Reais
     chamarAPI("listarTodosTerritoriosAdmin").then(res => {
-        // Limpa o placeholder apenas quando os dados chegarem
+        // Limpa o placeholder
         body.innerHTML = ''; 
+        
         if(!res || !res.length) {
-            body.innerHTML = '<p style="text-align:center">Nenhum território encontrado.</p>';
+            body.innerHTML = `
+                <div style="text-align:center; padding:30px; color:#7f8c8d;">
+                    <span class="material-icons" style="font-size:48px; opacity:0.3;">folder_off</span>
+                    <p>Nenhum território encontrado.</p>
+                </div>`;
             return;
         }
+
+        // Cabeçalho da Lista
+        body.innerHTML = `<div style="padding:10px; background:#e3f2fd; border-radius:8px; margin-bottom:15px; color:#1565c0; font-size:0.9rem;">
+            <span class="material-icons" style="vertical-align:bottom; font-size:18px;">info</span> 
+            Selecione um cartão para editar o nome.
+        </div>`;
+
+        // Gera a Lista
         res.forEach(t => {
-            body.innerHTML += `<div class="item-selecao" onclick="abrirEdicaoTerritorio('${t.id}','${t.nome}')"><b>${t.id}</b> - ${t.nome}</div>`;
+            var item = document.createElement('div');
+            item.className = 'item-selecao';
+            item.innerHTML = `
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span class="material-icons" style="color:#bdc3c7;">edit_location</span>
+                    <div>
+                        <div style="font-weight:bold; color:#2c3e50;">${t.id}</div>
+                        <div style="font-size:0.85rem; color:#7f8c8d;">${t.nome}</div>
+                    </div>
+                </div>
+                <span class="material-icons" style="color:#3498db;">chevron_right</span>
+            `;
+            item.onclick = () => abrirEdicaoTerritorio(t.id, t.nome);
+            body.appendChild(item);
         });
     });
 }
+
+    
 function filtrarListaEdicao(v) {
     document.querySelectorAll('#lista-gestao-body .item-selecao').forEach(i => i.style.display = i.innerText.toLowerCase().includes(v.toLowerCase()) ? 'flex' : 'none');
 }
@@ -990,6 +1040,7 @@ if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./service-
 
 </body>
 </html>
+
 
 
 
