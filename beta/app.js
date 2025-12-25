@@ -60,36 +60,35 @@ function atualizarPWA() {
 // --- INICIALIZAÇÃO CONTROLADA PELO SHELL ---
 function iniciarApp() {
     console.log("🚀 App iniciado via Shell");
-    Ambiente.detectar(); // Ativa a detecção de Beta/Produção
+    if (typeof Ambiente !== 'undefined') Ambiente.detectar();
 
     var emailSalvo = localStorage.getItem('app_territorios_email');
 
     if (emailSalvo) {
-        // Mostra uma notificação discreta enquanto entra
+        // --- ADICIONE ESTAS DUAS LINHAS ABAIXO ---
+        // Elas escondem a tela de login e mostram o aviso antes mesmo da API responder
+        document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
         mostrarNotificacao("Entrando automaticamente...", "info");
 
-        usuarioEmail = emailSalvo; // Preenche a variável global
+        usuarioEmail = emailSalvo;
 
-        // Faz o login automático chamando a API
         chamarAPI("verificarLogin", { email: emailSalvo }).then(r => {
             if (r.erro || r.status === "NAO_ENCONTRADO") {
-                // Se o e-mail não for mais válido, limpa e vai pro login
                 localStorage.removeItem('app_territorios_email');
                 navegarPara('tela-login');
             } else {
-                // Se estiver tudo ok, processa o login e entra direto
                 processarLogin(r);
             }
         });
     } else {
-        // Se não tem nada salvo, mostra a tela de login
+        // Se não tem nada salvo, aí sim vai para a tela de login
         navegarPara('tela-login');
     }
 
-    // --- Carrega a lista de cidades/bairros em segundo plano ---
+    // Carrega a lista de cidades/bairros em segundo plano
     setTimeout(carregarDadosLocais, 2000);
 
-    // Registro do Service Worker para modo Offline
+    // Registro do Service Worker
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./service-worker.js')
             .then(() => console.log("SW registrado com sucesso"));
