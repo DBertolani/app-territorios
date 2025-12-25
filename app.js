@@ -58,33 +58,50 @@ function atualizarPWA() {
 }
 
 // --- INICIALIZAÇÃO CONTROLADA PELO SHELL ---
-// Substitui o window.onload antigo
 function iniciarApp() {
     console.log("🚀 App iniciado via Shell");
+    if (typeof Ambiente !== 'undefined') Ambiente.detectar();
+
     var emailSalvo = localStorage.getItem('app_territorios_email');
 
     if (emailSalvo) {
-        document.getElementById('login-email').value = emailSalvo;
-        fazerLogin();
+        // --- ADICIONE ESTAS DUAS LINHAS ABAIXO ---
+        // Elas escondem a tela de login e mostram o aviso antes mesmo da API responder
+        document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
+        mostrarNotificacao("Entrando automaticamente...", "info");
+
+        usuarioEmail = emailSalvo;
+
+        chamarAPI("verificarLogin", { email: emailSalvo }).then(r => {
+            if (r.erro || r.status === "NAO_ENCONTRADO") {
+                localStorage.removeItem('app_territorios_email');
+                navegarPara('tela-login');
+            } else {
+                processarLogin(r);
+            }
+        });
     } else {
+        // Se não tem nada salvo, aí sim vai para a tela de login
         navegarPara('tela-login');
     }
 
-    // --- NOVO: Carrega a lista de cidades/bairros em segundo plano ---
-    // Espera 2 segundos para não travar a inicialização visual
+    // Carrega a lista de cidades/bairros em segundo plano
     setTimeout(carregarDadosLocais, 2000);
-    // ----------------------------------------------------------------
 
+    // Registro do Service Worker
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./service-worker.js');
+        navigator.serviceWorker.register('./service-worker.js')
+            .then(() => console.log("SW registrado com sucesso"));
     }
 }
 
 // --- AUTH ---
 function fazerLogin() {
-    var email = document.getElementById('login-email').value.trim();
+    var email = document.getElementById('login-email').value.trim().toLowerCase(); // Adicionado toLowerCase
     if (!email) return mostrarNotificacao("Digite seu e-mail.", "erro");
+
     usuarioEmail = email;
+    mostrarNotificacao("Verificando...", "info");
     chamarAPI("verificarLogin", { email: email }).then(processarLogin);
 }
 
