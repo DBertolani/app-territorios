@@ -1571,8 +1571,10 @@ function salvarEnderecoGestao() {
 
     // --- AJUSTE PARA TERRITÓRIO ---
     var terrRaw = document.getElementById('edit-end-territorio').value;
-    // Se o valor for vazio ou o texto fixo, mandamos vazio para a planilha
-    var territorioFinal = (terrRaw === "" || terrRaw === "sem-territorio") ? "" : terrRaw;
+    // Se o valor for "sem-territorio", vazio ou nulo, definimos como "" (vazio para a planilha)
+    var territorioFinal = (terrRaw === "sem-territorio" || !terrRaw) ? "" : terrRaw;
+
+    console.log("Enviando Território:", territorioFinal); // Verifique isso no F12 do navegador
     //////////////////////////////////////
 
 
