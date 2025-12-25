@@ -853,8 +853,6 @@ function mudarAbaGestao(aba, territorioPreSelecionado = null) {
 
 // --- ABA 1: CARTÕES (Melhorada com Ações Diretas) ---
 
-
-
 function carregarListaTerritoriosGestao() {
     var body = document.getElementById('lista-gestao-body');
     body.innerHTML = '<p style="padding:10px;text-align:center;">Carregando...</p>';
@@ -915,8 +913,6 @@ function carregarListaTerritoriosGestao() {
 }
 
 
-
-
 // --- ABA 2: ENDEREÇOS (Com Busca por Bairro) ---
 
 function carregarGestaoEnderecos(filtroId = null) {
@@ -931,21 +927,18 @@ function carregarGestaoEnderecos(filtroId = null) {
         cacheTerritoriosLista = Array.isArray(resTerr) ? resTerr : [];
         cacheEnderecosGestao = resEnd.enderecos || [];
 
-        // ✅ Se filtroId for "SEM", mostra apenas endereços sem território
         if (filtroId === 'SEM') {
             var filtrados = cacheEnderecosGestao.filter(e => !e.terr || e.terr.trim() === "");
             renderizarListaEnderecosGestao(filtrados);
             return;
         }
 
-        // ✅ Se filtroId for um território específico
         if (filtroId) {
             var filtrados = cacheEnderecosGestao.filter(e => e.terr === filtroId);
             renderizarListaEnderecosGestao(filtrados);
             return;
         }
 
-        // Caso contrário, mostra todos
         renderizarListaEnderecosGestao(cacheEnderecosGestao);
     }).catch(err => {
         console.error("ERRO DETALHADO:", err);
@@ -956,36 +949,30 @@ function carregarGestaoEnderecos(filtroId = null) {
 
 
 // --- FUNÇÃO QUE ESTAVA FALTANDO ---
+
 function atualizarSelectTerritorios(idSelect) {
     var select = document.getElementById(idSelect);
     if (!select) return;
 
-    var valorAtual = select.value; // Tenta guardar o que estava selecionado
-
+    var valorAtual = select.value;
     select.innerHTML = '<option value="">-- Sem Território --</option>';
 
-    // Proteção se a lista estiver vazia
-    if (!cacheTerritoriosLista || !Array.isArray(cacheTerritoriosLista)) {
-        return;
-    }
+    if (!cacheTerritoriosLista || !Array.isArray(cacheTerritoriosLista)) return;
 
     cacheTerritoriosLista.forEach(t => {
         var qtd = contagemPorTerritorio[t.id] || 0;
         var status = qtd >= 6 ? '(CHEIO)' : `(${qtd}/6)`;
-
         var option = document.createElement("option");
         option.value = t.id;
         option.text = `${t.id} - ${t.nome} ${status}`;
-
-        // Opcional: pinta de vermelho se estiver cheio
         if (qtd >= 6) option.style.color = 'red';
-
         select.appendChild(option);
     });
 
-    // Restaura seleção se possível
     if (valorAtual) select.value = valorAtual;
 }
+
+
 
 
 function renderizarListaEnderecosGestao(lista) {
@@ -997,7 +984,6 @@ function renderizarListaEnderecosGestao(lista) {
         return;
     }
 
-    // Ordena para manter consistência
     lista.sort((a, b) => String(a.terr || '').localeCompare(String(b.terr || '')));
 
     lista.slice(0, 100).forEach(end => {
@@ -1005,16 +991,15 @@ function renderizarListaEnderecosGestao(lista) {
         item.className = 'card-endereco-gestao';
         item.onclick = () => preencherFormularioGestao(end);
 
-        // ✅ Destaque para endereços SEM território
         var isSemTerritorio = !end.terr || end.terr.trim() === "";
-        var alertaIcon = isSemTerritorio ? '<span class="material-icons" style="color:#e74c3c;font-size:14px;vertical-align:middle;margin-right:4px;">warning</span>' : '';
         var terrLabel = isSemTerritorio ? 'SEM TERRITÓRIO' : end.terr;
+        var alertaIcon = isSemTerritorio ? '<span class="material-icons" style="color:#e74c3c;font-size:14px;vertical-align:middle;margin-right:4px;">warning</span>' : '';
+        var localHtml = end.bairro ? ` • ${end.bairro}` : '';
 
-        // ✅ Mantém padrão visual, apenas adiciona alerta e cor
         item.innerHTML = `
             <div style="flex:1;">
                 <div style="font-size:0.75rem; color:${isSemTerritorio ? '#e74c3c' : '#3498db'}; font-weight:bold; text-transform:uppercase; margin-bottom:4px;">
-                    ${alertaIcon}<span class="material-icons" style="font-size:12px; vertical-align:middle;">map</span> ${terrLabel}${end.bairro ? ` • ${end.bairro}` : ''}
+                    ${alertaIcon}<span class="material-icons" style="font-size:12px; vertical-align:middle;">map</span> ${terrLabel}${localHtml}
                 </div>
                 <div style="font-size:1.1rem; color:#2c3e50; font-weight:bold;">${end.rua}, ${end.num}</div>
                 <div style="font-size:0.85rem; color:#7f8c8d;">${end.ref || 'Sem referência'}</div>
@@ -1024,7 +1009,6 @@ function renderizarListaEnderecosGestao(lista) {
             </div>
         `;
 
-        // ✅ Se for SEM território, aplica borda vermelha discreta
         if (isSemTerritorio) {
             item.style.border = '2px solid #e74c3c';
             item.style.backgroundColor = '#fff8f8';
@@ -1033,6 +1017,7 @@ function renderizarListaEnderecosGestao(lista) {
         div.appendChild(item);
     });
 }
+
 
 
 function filtrarEnderecosGestao() {
@@ -1156,119 +1141,65 @@ function executarExclusaoReal(id) {
 
 
 
+
 function preencherFormularioGestao(end) {
     document.getElementById('form-gestao-endereco').classList.remove('hidden');
     document.getElementById('edit-end-id').value = end.id;
 
-    // --- NOVO: Mostra o botão de excluir ---
     var btnExcluir = document.getElementById('btn-excluir-endereco');
     if (btnExcluir) {
-        btnExcluir.classList.remove('hidden'); // Remove a classe que esconde
-        btnExcluir.style.display = "flex"; // Força o display flex para alinhar ícone
+        btnExcluir.classList.remove('hidden');
+        btnExcluir.style.display = "flex";
     }
-    // ------------------------------------
 
-    // --- 1. LÓGICA DE LOCALIZAÇÃO (VISUAL LIMPO) ---
+    // Atualiza lista de territórios no select
+    atualizarSelectTerritorios('edit-end-territorio');
+
+    // Normaliza território
+    var terrValue = (end.terr && end.terr.trim() !== "") ? end.terr : "";
+    document.getElementById('edit-end-territorio').value = terrValue;
+
+    // Aviso de lotação
+    verificarLotacaoTerritorio(terrValue);
+
+    // Estado/Cidade/Bairro
     var cidadeSalva = end.cidade || "";
     var estadoDetectado = "RJ";
     var cidadeDetectada = cidadeSalva;
 
-    // Separa Cidade e Estado
     if (cidadeSalva.includes("-")) {
         var partes = cidadeSalva.split("-");
         cidadeDetectada = partes[0].trim();
         if (partes.length > 1) estadoDetectado = partes[1].trim().toUpperCase();
     }
 
-    // A. ESTADO
     var selEstado = document.getElementById('edit-end-estado');
     if (selEstado) {
-        // Carrega a lista original primeiro
         popularSelect("edit-end-estado", Object.keys(cacheLocais), true);
-
-        // Verifica se o estado do endereço está na lista
-        var existeEstado = Array.from(selEstado.options).some(opt => opt.value === estadoDetectado);
-
-        if (!existeEstado && estadoDetectado) {
-            // Se não existe (ex: MG), CRIA a opção visualmente para ficar bonito dentro do select
-            var opt = document.createElement('option');
-            opt.value = estadoDetectado;
-            opt.text = estadoDetectado;
-            // Insere logo após o "Selecione"
-            selEstado.add(opt, 1);
-        }
-
         selEstado.value = estadoDetectado;
-        verificarEstadoNovo(estadoDetectado); // Garante que o input text fique oculto
-
-        // Força carregamento das cidades
+        verificarEstadoNovo(estadoDetectado);
         carregarCidades(estadoDetectado);
     }
 
-    // B. CIDADE
     var selCidade = document.getElementById('edit-end-cidade');
     if (selCidade) {
-        // Verifica se a cidade está na lista carregada
-        var existeCidade = Array.from(selCidade.options).some(opt => opt.value === cidadeDetectada);
-
-        if (!existeCidade && cidadeDetectada) {
-            // Adiciona a cidade atual na lista para não ficar "em branco" ou no campo "novo"
-            var opt = document.createElement('option');
-            opt.value = cidadeDetectada;
-            opt.text = cidadeDetectada;
-            selCidade.add(opt, 1);
-        }
-
         selCidade.value = cidadeDetectada;
-        verificarCidadeNovo(cidadeDetectada); // Esconde input text
-
-        // Força carregamento dos bairros
+        verificarCidadeNovo(cidadeDetectada);
         carregarBairros(cidadeDetectada);
     }
 
-    // C. BAIRRO (A correção principal que você pediu)
     var selBairro = document.getElementById('edit-end-bairro');
     if (selBairro) {
-        var bairroSalvo = (end.bairro || "").trim();
-
-        // Procura ignorando maiúsculas/minúsculas para evitar duplicidade
-        var match = Array.from(selBairro.options).find(opt => opt.value.toLowerCase() === bairroSalvo.toLowerCase());
-
-        if (match) {
-            // Se achou (mesmo com case diferente), usa o valor da lista
-            selBairro.value = match.value;
-        } else if (bairroSalvo !== "") {
-            // SE NÃO ACHOU NA LISTA: Adiciona DENTRO DA SETINHA ao invés de jogar pro input
-            var opt = document.createElement('option');
-            opt.value = bairroSalvo;
-            opt.text = bairroSalvo;
-            // Adiciona no topo da lista (abaixo do "Selecione")
-            selBairro.add(opt, 1);
-
-            // Seleciona ele
-            selBairro.value = bairroSalvo;
-        }
-
-        // IMPORTANTE: Isso garante que o campo de digitar "Novo Bairro" fique oculto
-        // pois agora temos um valor válido selecionado no dropdown.
+        selBairro.value = end.bairro || "";
         verificarBairroNovo(selBairro.value);
-
-        // Limpa o input oculto para garantir
-        document.getElementById('input-bairro-novo').value = "";
     }
-    // -------------------------------------------------------
 
-    // Preenche o restante dos dados
-    document.getElementById('edit-end-territorio').value = end.terr;
     document.getElementById('edit-end-rua').value = end.rua;
     document.getElementById('edit-end-numero').value = end.num;
     document.getElementById('edit-end-ref').value = end.ref || "";
     document.getElementById('edit-end-lat').value = end.lat || "";
     document.getElementById('edit-end-lng').value = end.lng || "";
 
-    verificarLotacaoTerritorio(end.terr);
-
-    // Rola para o topo
     var container = document.getElementById('view-gestao-enderecos');
     if (container) container.scrollTop = 0;
 }
