@@ -58,33 +58,51 @@ function atualizarPWA() {
 }
 
 // --- INICIALIZAÇÃO CONTROLADA PELO SHELL ---
-// Substitui o window.onload antigo
 function iniciarApp() {
     console.log("🚀 App iniciado via Shell");
+    Ambiente.detectar(); // Ativa a detecção de Beta/Produção
+
     var emailSalvo = localStorage.getItem('app_territorios_email');
 
     if (emailSalvo) {
-        document.getElementById('login-email').value = emailSalvo;
-        fazerLogin();
+        // Mostra uma notificação discreta enquanto entra
+        mostrarNotificacao("Entrando automaticamente...", "info");
+
+        usuarioEmail = emailSalvo; // Preenche a variável global
+
+        // Faz o login automático chamando a API
+        chamarAPI("verificarLogin", { email: emailSalvo }).then(r => {
+            if (r.erro || r.status === "NAO_ENCONTRADO") {
+                // Se o e-mail não for mais válido, limpa e vai pro login
+                localStorage.removeItem('app_territorios_email');
+                navegarPara('tela-login');
+            } else {
+                // Se estiver tudo ok, processa o login e entra direto
+                processarLogin(r);
+            }
+        });
     } else {
+        // Se não tem nada salvo, mostra a tela de login
         navegarPara('tela-login');
     }
 
-    // --- NOVO: Carrega a lista de cidades/bairros em segundo plano ---
-    // Espera 2 segundos para não travar a inicialização visual
+    // --- Carrega a lista de cidades/bairros em segundo plano ---
     setTimeout(carregarDadosLocais, 2000);
-    // ----------------------------------------------------------------
 
+    // Registro do Service Worker para modo Offline
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./service-worker.js');
+        navigator.serviceWorker.register('./service-worker.js')
+            .then(() => console.log("SW registrado com sucesso"));
     }
 }
 
 // --- AUTH ---
 function fazerLogin() {
-    var email = document.getElementById('login-email').value.trim();
+    var email = document.getElementById('login-email').value.trim().toLowerCase(); // Adicionado toLowerCase
     if (!email) return mostrarNotificacao("Digite seu e-mail.", "erro");
+
     usuarioEmail = email;
+    mostrarNotificacao("Verificando...", "info");
     chamarAPI("verificarLogin", { email: email }).then(processarLogin);
 }
 
