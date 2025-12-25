@@ -852,19 +852,23 @@ function mudarAbaGestao(aba, territorioPreSelecionado = null) {
 }
 
 // --- ABA 1: CARTÕES (Melhorada com Ações Diretas) ---
+
+
+
 function carregarListaTerritoriosGestao() {
     var body = document.getElementById('lista-gestao-body');
-    body.innerHTML = '<div style="text-align:center; padding:20px;"><span class="material-icons" style="animation:spin 1s linear infinite;">sync</span><br>Carregando...</div>';
+    body.innerHTML = '<p style="padding:10px;text-align:center;">Carregando...</p>';
 
-    // Precisamos carregar os endereços também para saber a contagem correta
     Promise.all([
         chamarAPI("listarTodosTerritoriosAdmin"),
         chamarAPI("listarTodosEnderecosSimples")
     ]).then(([resTerr, resEnd]) => {
         body.innerHTML = '';
-        if (!resTerr || !resTerr.length) { body.innerHTML = '<p>Nada encontrado.</p>'; return; }
+        if (!resTerr || !resTerr.length) {
+            body.innerHTML = '<p>Nada encontrado.</p>';
+            return;
+        }
 
-        // Mapa de contagem
         var contagem = {};
         (resEnd.enderecos || []).forEach(e => {
             if (!contagem[e.terr]) contagem[e.terr] = 0;
@@ -874,93 +878,81 @@ function carregarListaTerritoriosGestao() {
         resTerr.forEach(t => {
             var qtd = contagem[t.id] || 0;
             var corQtd = qtd >= 6 ? '#e74c3c' : '#27ae60';
+            var podeAdicionar = qtd < 6; // ✅ Bloqueia se já tem 6
+
             var item = document.createElement('div');
             item.className = 'item-selecao';
-            item.style.flexDirection = 'column'; // Layout vertical para caber botões
+            item.style.flexDirection = 'column';
             item.style.alignItems = 'flex-start';
-
             item.innerHTML = `
-                <div style="display:flex; justify-content:space-between; width:100%; align-items:center; margin-bottom:10px;">
-                    <div>
-                        <div style="font-weight:bold; color:#2c3e50; font-size:1.1rem;">${t.id}</div>
-                        <div style="font-size:0.85rem; color:#7f8c8d;">${t.nome}</div>
-                        <div style="font-size:0.8rem; font-weight:bold; color:${corQtd}; margin-top:2px;">
-                            ${qtd}/6 Endereços
-                        </div>
-                    </div>
-                    <button onclick="abrirEdicaoTerritorio('${t.id}', '${t.nome}')" style="background:#f0f0f0; border:none; border-radius:50%; width:40px; height:40px; color:#666;">
-                        <span class="material-icons">edit</span>
-                    </button>
-                </div>
-                
-                <div style="display:flex; gap:10px; width:100%; border-top:1px solid #eee; padding-top:10px;">
-                    <button class="btn-azul" style="flex:1; font-size:0.8rem; padding:8px;" onclick="mudarAbaGestao('enderecos', '${t.id}')">
-                        <span class="material-icons" style="font-size:16px;">list</span> Ver Lista
-                    </button>
-                    <button class="btn-verde" style="flex:1; font-size:0.8rem; padding:8px;" onclick="adicionarEnderecoDireto('${t.id}')">
-                        <span class="material-icons" style="font-size:16px;">add</span> + Endereço
-                    </button>
-                </div>
+                <h4>${t.id} - ${t.nome}</h4>
+                <p style="color:${corQtd};">${qtd}/6 Endereços</p>
+                <button class="btn-azul" onclick="mudarAbaGestao('enderecos', '${t.id}')">Ver Lista</button>
+                ${podeAdicionar ? `<button class="btn-verde" onclick="adicionarEnderecoDireto('${t.id}')">+ Endereço</button>` : ''}
             `;
             body.appendChild(item);
         });
+
+        // ✅ Bloco para endereços SEM território
+        var semTerritorio = (resEnd.enderecos || []).filter(e => !e.terr || e.terr.trim() === "");
+        if (semTerritorio.length > 0) {
+            var bloco = document.createElement('div');
+            bloco.className = 'item-selecao';
+            bloco.style.border = '2px dashed #3498db';
+            bloco.style.marginTop = '15px';
+            bloco.style.flexDirection = 'column';
+            bloco.innerHTML = `
+                <h4>Endereços SEM Território</h4>
+                <p><b>${semTerritorio.length} aguardando designação</b></p>
+                <button class="btn-azul" onclick="mudarAbaGestao('enderecos', 'SEM')">Gerenciar</button>
+            `;
+            body.appendChild(bloco);
+        }
+    }).catch(err => {
+        console.error("Erro ao carregar lista de gestão:", err);
+        body.innerHTML = `<p style="color:red;">Erro ao carregar dados.</p>`;
     });
 }
 
+
+
+
 // --- ABA 2: ENDEREÇOS (Com Busca por Bairro) ---
+
 function carregarGestaoEnderecos(filtroId = null) {
     fecharFormularioGestao();
     var divLista = document.getElementById('lista-enderecos-gestao');
-    divLista.innerHTML = '<div style="text-align:center; padding:20px;"><span class="material-icons" style="animation:spin 1s linear infinite;">sync</span><br>Buscando dados...</div>';
+    divLista.innerHTML = '<p>Buscando dados...</p>';
 
     Promise.all([
         chamarAPI("listarTodosTerritoriosAdmin"),
         chamarAPI("listarTodosEnderecosSimples")
     ]).then(([resTerr, resEnd]) => {
-        // Verifica erros vindos da API (ex: Coluna não encontrada)
-        if (resTerr.erro || resEnd.erro) {
-            throw new Error(resTerr.erro || resEnd.erro);
-        }
-
-        // Blindagem contra dados nulos
-        cacheTerritoriosLista = resTerr.mapas || (Array.isArray(resTerr) ? resTerr : []);
+        cacheTerritoriosLista = Array.isArray(resTerr) ? resTerr : [];
         cacheEnderecosGestao = resEnd.enderecos || [];
 
-        contagemPorTerritorio = {};
-
-        // Loop seguro (evita crash se a lista vier vazia/quebrada)
-        if (Array.isArray(cacheEnderecosGestao)) {
-            cacheEnderecosGestao.forEach(e => {
-                if (e && e.terr) {
-                    if (!contagemPorTerritorio[e.terr]) contagemPorTerritorio[e.terr] = 0;
-                    contagemPorTerritorio[e.terr]++;
-                }
-            });
+        // ✅ Se filtroId for "SEM", mostra apenas endereços sem território
+        if (filtroId === 'SEM') {
+            var filtrados = cacheEnderecosGestao.filter(e => !e.terr || e.terr.trim() === "");
+            renderizarListaEnderecosGestao(filtrados);
+            return;
         }
 
-        atualizarSelectTerritorios('edit-end-territorio');
-
+        // ✅ Se filtroId for um território específico
         if (filtroId) {
-            document.getElementById('edit-end-territorio').value = filtroId;
-            document.getElementById('busca-endereco-gestao').value = filtroId;
-            filtrarEnderecosGestao();
-        } else {
-            renderizarListaEnderecosGestao(cacheEnderecosGestao);
+            var filtrados = cacheEnderecosGestao.filter(e => e.terr === filtroId);
+            renderizarListaEnderecosGestao(filtrados);
+            return;
         }
+
+        // Caso contrário, mostra todos
+        renderizarListaEnderecosGestao(cacheEnderecosGestao);
     }).catch(err => {
         console.error("ERRO DETALHADO:", err);
-        // MOSTRA O ERRO REAL NA TELA
-        divLista.innerHTML = `<div style="text-align:center; padding:20px; color:red;">
-            <span class="material-icons">error</span><br>
-            <b>Ocorreu um erro:</b><br>
-            ${err.message || err.toString()}
-        </div>`;
-
-        // Destrava o dropdown
-        var select = document.getElementById('edit-end-territorio');
-        if (select) select.innerHTML = '<option value="">Erro ao carregar</option>';
+        divLista.innerHTML = `<p style="color:red;">Erro ao carregar dados.</p>`;
     });
 }
+
 
 
 // --- FUNÇÃO QUE ESTAVA FALTANDO ---
@@ -995,6 +987,7 @@ function atualizarSelectTerritorios(idSelect) {
     if (valorAtual) select.value = valorAtual;
 }
 
+
 function renderizarListaEnderecosGestao(lista) {
     var div = document.getElementById('lista-enderecos-gestao');
     div.innerHTML = '';
@@ -1004,7 +997,7 @@ function renderizarListaEnderecosGestao(lista) {
         return;
     }
 
-    // [CORREÇÃO AQUI]: Converte para texto antes de ordenar para não travar
+    // Ordena para manter consistência
     lista.sort((a, b) => String(a.terr || '').localeCompare(String(b.terr || '')));
 
     lista.slice(0, 100).forEach(end => {
@@ -1012,24 +1005,35 @@ function renderizarListaEnderecosGestao(lista) {
         item.className = 'card-endereco-gestao';
         item.onclick = () => preencherFormularioGestao(end);
 
-        var localHtml = '';
-        if (end.bairro) localHtml += ` • ${end.bairro}`;
+        // ✅ Destaque para endereços SEM território
+        var isSemTerritorio = !end.terr || end.terr.trim() === "";
+        var alertaIcon = isSemTerritorio ? '<span class="material-icons" style="color:#e74c3c;font-size:14px;vertical-align:middle;margin-right:4px;">warning</span>' : '';
+        var terrLabel = isSemTerritorio ? 'SEM TERRITÓRIO' : end.terr;
 
+        // ✅ Mantém padrão visual, apenas adiciona alerta e cor
         item.innerHTML = `
             <div style="flex:1;">
-                <div style="font-size:0.75rem; color:#3498db; font-weight:bold; text-transform:uppercase; margin-bottom:4px;">
-                    <span class="material-icons" style="font-size:12px; vertical-align:middle;">map</span> ${end.terr}${localHtml}
+                <div style="font-size:0.75rem; color:${isSemTerritorio ? '#e74c3c' : '#3498db'}; font-weight:bold; text-transform:uppercase; margin-bottom:4px;">
+                    ${alertaIcon}<span class="material-icons" style="font-size:12px; vertical-align:middle;">map</span> ${terrLabel}${end.bairro ? ` • ${end.bairro}` : ''}
                 </div>
                 <div style="font-size:1.1rem; color:#2c3e50; font-weight:bold;">${end.rua}, ${end.num}</div>
                 <div style="font-size:0.85rem; color:#7f8c8d;">${end.ref || 'Sem referência'}</div>
             </div>
             <div style="text-align:right;">
-                 <span class="material-icons" style="color:#bdc3c7;">edit</span>
+                <span class="material-icons" style="color:#bdc3c7;">edit</span>
             </div>
         `;
+
+        // ✅ Se for SEM território, aplica borda vermelha discreta
+        if (isSemTerritorio) {
+            item.style.border = '2px solid #e74c3c';
+            item.style.backgroundColor = '#fff8f8';
+        }
+
         div.appendChild(item);
     });
 }
+
 
 function filtrarEnderecosGestao() {
     var termo = document.getElementById('busca-endereco-gestao').value.toLowerCase();
@@ -1644,5 +1648,4 @@ function executarProcessamentoRemoto() {
         }
     });
 }
-
 
