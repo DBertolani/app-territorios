@@ -1,0 +1,208 @@
+/**
+ * ARQUIVO: GestaoTerritorios.gs
+ * Responsável por listar, salvar endereços e gerenciar a configuração de bairros/locais.
+ */
+
+// --- 1. LISTAR TODOS ENDEREÇOS (Para o mapa geral) ---
+function listarTodosEnderecosSimples() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const aba = ss.getSheetByName("Endereços_Geral");
+  
+  if (!aba) return { erro: "Aba Endereços_Geral não encontrada" };
+  
+  const dados = aba.getDataRange().getValues();
+  const lista = [];
+  
+  const h = dados[0].map(c => c ? c.toString().trim() : ""); 
+  const idxId = h.indexOf("ID_Unico");       
+  const idxTerr = h.indexOf("Territorio_ID");
+  const idxCidade = h.indexOf("Cidade"); 
+  const idxBairro = h.indexOf("Bairro"); 
+  const idxRua = h.indexOf("Rua");
+  const idxNum = h.indexOf("Numero");
+  const idxRef = h.indexOf("Referencia");
+  const idxLat = h.indexOf("Latitude");
+  const idxLng = h.indexOf("Longitude");
+
+  for (let i = 1; i < dados.length; i++) {
+    if (idxId > -1 && dados[i][idxId]) {
+      lista.push({
+        id: dados[i][idxId],
+        terr: dados[i][idxTerr],
+        cidade: (idxCidade > -1) ? dados[i][idxCidade] : "",
+        bairro: (idxBairro > -1) ? dados[i][idxBairro] : "",
+        rua: dados[i][idxRua],
+        num: dados[i][idxNum],
+        ref: dados[i][idxRef],
+        lat: (idxLat > -1) ? dados[i][idxLat] : "",
+        lng: (idxLng > -1) ? dados[i][idxLng] : ""
+      });
+    }
+  }
+  
+  return { enderecos: lista };
+}
+
+// --- 2. SALVAR ENDEREÇO (Com Auto-Cadastro de Bairro) ---
+function salvarEnderecoGestao(dados) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const abaEnd = ss.getSheetByName("Endereços_Geral");
+  const abaConfig = ss.getSheetByName("Config_Bairros");
+  
+  // Verificação de segurança
+  if (!abaEnd) return { erro: "Aba 'Endereços_Geral' não encontrada." };
+  if (!abaConfig) return { erro: "Aba 'Config_Bairros' não encontrada." };
+
+  const matriz = abaEnd.getDataRange().getValues();
+  const headers = matriz[0];
+  
+  const map = {};
+  headers.forEach((col, i) => map[col] = i);
+  
+  const colIdNome = "ID_Unico"; 
+  const idxEndId = map[colIdNome];
+
+  if (idxEndId === undefined) return { erro: "Coluna 'ID_Unico' não encontrada." };
+
+  // --- A. Validação de Limite (6 casas por cartão) ---
+  if (dados.idTerritorio) {
+    let count = 0;
+    const idxTerr = map["Territorio_ID"];
+    
+    if (idxTerr !== undefined) {
+        for (let i = 1; i < matriz.length; i++) {
+          // Conta apenas se for do mesmo território E não for o próprio (edição)
+          if (matriz[i][idxTerr] == dados.idTerritorio && matriz[i][idxEndId] != dados.idEndereco) {
+            count++;
+          }
+        }
+        if (count >= 6) {
+          return { erro: `O Território ${dados.idTerritorio} já está CHEIO (6 endereços).` };
+        }
+    }
+  }
+
+  // --- B. AUTO-CADASTRO DE BAIRRO NA CONFIG ---
+  // Formato esperado em dados.cidade: "Itaperuna - RJ"
+  // Formato da chave na Config: "Itaperuna - Aeroporto"
+  if (dados.cidade && dados.bairro) {
+      const nomeCidade = dados.cidade.split(" - ")[0].trim(); // Pega só "Itaperuna"
+      const chaveBairro = `${nomeCidade} - ${dados.bairro}`;  // Monta "Itaperuna - NovoBairro"
+      
+      const dataConfig = abaConfig.getDataRange().getValues();
+      let existeConfig = false;
+      
+      // Verifica se já existe na coluna A (índice 0)
+      for(let i=1; i<dataConfig.length; i++) {
+          if(dataConfig[i][0] == chaveBairro) { existeConfig = true; break; }
+      }
+      
+      // Se não existe, cria!
+      if (!existeConfig) {
+          // Gera Sigla Automática: 4 primeiras letras maiúsculas (ex: NOVO)
+          const siglaAuto = dados.bairro.substring(0,4).toUpperCase().replace(/\s/g, "");
+          // Adiciona: Chave | Sigla | Seq(0) | Zona Padrão
+          abaConfig.appendRow([chaveBairro, siglaAuto, 0, "Zona Nova"]);
+      }
+  }
+  // -----------------------------------------------
+
+  // --- C. Salvar o Endereço ---
+  let linhaAlvo = -1;
+
+  if (dados.idEndereco) {
+    // Busca ID existente para editar
+    for (let i = 1; i < matriz.length; i++) {
+      if (matriz[i][idxEndId] == dados.idEndereco) { linhaAlvo = i + 1; break; }
+    }
+  } else {
+    // Novo Endereço: Gera ID Vitalício (ADDR-TIMESTAMP)
+    linhaAlvo = matriz.length + 1;
+    dados.idEndereco = "ADDR-" + new Date().getTime().toString(36).toUpperCase(); 
+    abaEnd.getRange(linhaAlvo, idxEndId + 1).setValue(dados.idEndereco);
+  }
+
+  if (linhaAlvo > 0) {
+    const set = (colNome, val) => {
+        if (map[colNome] !== undefined) abaEnd.getRange(linhaAlvo, map[colNome] + 1).setValue(val);
+    };
+
+    set("Cidade", dados.cidade);
+    set("Bairro", dados.bairro);
+    set("Territorio_ID", dados.idTerritorio);
+    set("Rua", dados.rua);
+    set("Numero", dados.numero);
+    set("Referencia", dados.referencia);
+    set("Latitude", dados.lat);
+    set("Longitude", dados.lng);
+    
+    return { sucesso: "Salvo!", id: dados.idEndereco };
+  }
+  
+  return { erro: "Erro genérico ao salvar (Linha alvo inválida)." };
+}
+
+
+// --- 3. LISTAR HIERARQUIA DE LOCAIS (Para os Selects do App) ---
+function listarHierarquiaLocais() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const aba = ss.getSheetByName("Config_Bairros");
+  
+  if (!aba) return {}; // Retorna vazio se não tiver aba
+
+  const dados = aba.getDataRange().getValues();
+  
+  // Estrutura de retorno: { "RJ": { "Itaperuna": ["Aeroporto", "Centro"] } }
+  let hierarquia = {};
+
+  // Pula cabeçalho (i=1)
+  for (let i = 1; i < dados.length; i++) {
+    let chave = dados[i][0]; // Coluna A: "Itaperuna - Aeroporto"
+    
+    if (chave) {
+        let partes = chave.toString().split(" - ");
+        if (partes.length >= 2) {
+            let cidade = partes[0].trim();
+            let bairro = partes[1].trim();
+            let estado = "RJ"; // Padrão
+            
+            // Constrói a árvore JSON
+            if (!hierarquia[estado]) hierarquia[estado] = {};
+            if (!hierarquia[estado][cidade]) hierarquia[estado][cidade] = [];
+            
+            // Adiciona bairro se não estiver na lista
+            if (!hierarquia[estado][cidade].includes(bairro)) {
+                hierarquia[estado][cidade].push(bairro);
+            }
+        }
+    }
+  }
+  
+  return hierarquia; // <--- FALTAVA ISSO
+} // <--- FALTAVA ISSO
+
+// --- 4. EXCLUIR ENDEREÇO ---
+function excluirEndereco(idEndereco) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const aba = ss.getSheetByName("Endereços_Geral");
+  
+  if (!aba) return { erro: "Aba Endereços_Geral não encontrada" };
+  if (!idEndereco) return { erro: "ID inválido" };
+
+  const dados = aba.getDataRange().getValues();
+  const headers = dados[0].map(h => h ? h.toString().trim() : "");
+  const idxId = headers.indexOf("ID_Unico");
+
+  if (idxId === -1) return { erro: "Coluna ID_Unico não encontrada" };
+
+  // Procura a linha (começando da linha 1, pois 0 é cabeçalho)
+  for (let i = 1; i < dados.length; i++) {
+    if (dados[i][idxId].toString() === idEndereco.toString()) {
+      // +1 porque arrays começam em 0, mas linhas do Excel começam em 1
+      aba.deleteRow(i + 1); 
+      return { sucesso: "Endereço excluído com sucesso!" };
+    }
+  }
+
+  return { erro: "Endereço não encontrado para exclusão." };
+}

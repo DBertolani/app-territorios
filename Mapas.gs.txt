@@ -1,0 +1,35 @@
+// =======================================================
+// ARQUIVO: Mapas.gs
+// =======================================================
+
+function buscarEnderecosPorTerritorio(idTerritorio) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const abaEnd = ss.getSheetByName("Endereços_Geral");
+  
+  if (!abaEnd) return { cidade: "N/A", enderecos: [] };
+
+  const dadosEnd = abaEnd.getDataRange().getValues();
+  const enderecos = [];
+  let cidade = "N/A";
+
+  // Busca endereços (Começa do 1 para pular cabeçalho)
+  for (let i = 1; i < dadosEnd.length; i++) {
+    // Coluna J (índice 9) é o Territorio_ID
+    if (dadosEnd[i][9].toString() === idTerritorio.toString()) { 
+      
+      // Pega a cidade do primeiro registro encontrado
+      if (cidade === "N/A") cidade = dadosEnd[i][1];
+      
+      enderecos.push({
+        id: dadosEnd[i][0],      // Coluna A: ID Único
+        rua: dadosEnd[i][3],     // Coluna D: Rua
+        numero: dadosEnd[i][4],  // Coluna E: Número
+        referencia: dadosEnd[i][5], // Coluna F: Referência
+        lat: dadosEnd[i][7],     // Coluna H: Latitude
+        lng: dadosEnd[i][8]      // Coluna I: Longitude
+      });
+    }
+  }
+
+  return { enderecos: enderecos, cidade: cidade };
+}

@@ -1,0 +1,458 @@
+
+
+<div id="toast-container"></div>
+
+<header class="app-header hidden" id="app-header">
+    <div class="app-title">
+        <span class="material-icons" style="color:#3498db">map</span>
+        <div style="display:flex; flex-direction:column; line-height:1;">
+            <span>Territórios</span>
+            <span id="header-nome-usuario" style="font-size:0.7rem; color:#666; font-weight:normal;"></span>
+        </div>
+    </div>
+    <div class="header-actions">
+        <button class="icon-btn hidden" id="btn-admin-bell" onclick="toggleModal('modal-admin')">
+            <span class="material-icons">notifications</span>
+            <span class="badge hidden" id="admin-badge">0</span>
+        </button>
+    </div>
+</header>
+
+<main id="main-content">
+    <div id="tela-login" class="app-view tela-central active">
+        <h2>👤 Entrar</h2>
+        <p>Bem-vindo ao sistema.</p>
+        <input type="email" id="login-email" placeholder="seuemail@exemplo.com">
+        <button class="btn-azul" onclick="fazerLogin()">Acessar</button>
+    </div>
+
+    <div id="tela-pendente" class="app-view tela-central">
+        <h2>⏳ Aguardando</h2>
+        <span class="material-icons" style="font-size: 48px; color: #f39c12;">hourglass_top</span>
+        <p>Sua solicitação está em análise.</p>
+        <button onclick="fazerLogout()" style="background:#f0f0f0; color:#333;">Voltar</button>
+    </div>
+
+    <div id="tela-cadastro" class="app-view tela-central">
+        <h2>🔒 Acesso Restrito</h2>
+        <p>Solicite seu cadastro.</p>
+        <input type="text" id="cad-nome" placeholder="Nome">
+        <input type="text" id="cad-sobrenome" placeholder="Sobrenome">
+        <input type="tel" id="cad-tel" placeholder="WhatsApp (DDD + Número)">
+        <button class="btn-azul" onclick="enviarSolicitacao()">Solicitar</button>
+        <button onclick="fazerLogout()" style="background:transparent; color:#666; margin-top:5px;">Cancelar</button>
+    </div>
+
+    <div id="tela-sistema" class="app-view container">
+        <div id="lista-territorios" class="grid-wrapper"></div>
+    </div>
+</main>
+
+<nav class="app-footer hidden" id="app-footer">
+    <button class="nav-item active" onclick="navegarPara('tela-sistema')">
+        <span class="material-icons">dashboard</span>
+        <span>Cartões</span>
+    </button>
+    <button class="nav-item hidden" id="nav-gestao" onclick="abrirGestaoTerritorios()">
+        <span class="material-icons">edit_location_alt</span>
+        <span>Gestão</span>
+    </button>
+    <button class="nav-item" onclick="toggleModal('modal-perfil')">
+        <span class="material-icons">person</span>
+        <span>Perfil</span>
+    </button>
+</nav>
+
+<div id="modal-admin" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="margin:0">🔔 Solicitações</h3><button class="btn-close"
+                onclick="toggleModal('modal-admin')"><span class="material-icons">close</span></button>
+        </div>
+        <div class="modal-body" id="lista-solicitacoes">
+            <p style="text-align:center;">Carregando...</p>
+        </div>
+    </div>
+</div>
+
+<div id="modal-users" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="margin:0">Gerenciar Usuários</h3><button class="btn-close"
+                onclick="toggleModal('modal-users')"><span class="material-icons">close</span></button>
+        </div>
+        <div class="modal-body" id="lista-users-body"></div>
+    </div>
+</div>
+
+<div id="modal-designar" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 400px; align-self: center;">
+        <div class="modal-header">
+            <h3 style="margin:0">Designar</h3><button class="btn-close" onclick="toggleModal('modal-designar')"><span
+                    class="material-icons">close</span></button>
+        </div>
+        <div class="modal-body">
+            <p id="msg-designar-titulo">Para quem vai este cartão?</p>
+            <select id="sel-designar-pub"
+                style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                <option value="">Carregando...</option>
+            </select>
+            <div style="margin: 15px 0; padding: 10px; background: #f9f9f9; border-radius: 6px;">
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                    <input type="checkbox" id="check-offline" onchange="toggleInputOffline()">
+                    <strong id="lbl-check-offline">Registrar Publicador sem App</strong>
+                </label>
+                <div id="area-offline-inputs" class="hidden" style="margin-top:10px;">
+                    <input type="text" id="input-offline-nome" placeholder="Nome"
+                        style="width: 100%; padding: 8px; margin-bottom: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                    <input type="text" id="input-offline-sobrenome" placeholder="Sobrenome"
+                        style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+            </div>
+            <button class="btn-designar" id="btn-confirmar-designacao">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-endereco" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="margin:0" id="detalhes-endereco-titulo">Endereço</h3>
+            <button class="btn-close" onclick="toggleModal('modal-endereco')"><span
+                    class="material-icons">close</span></button>
+        </div>
+        <div class="modal-body">
+            <div style="text-align:left;">
+                <div class="end-meta">
+                    <p style="margin:0; font-size:0.9rem; color:#666;" id="detalhes-cidade">---</p>
+                    <p style="margin:2px 0 10px 0; font-size:0.9rem; color:#888;" id="detalhes-bairro">---</p>
+                </div>
+                <div class="end-main">
+                    <span id="detalhes-rua">---</span>, <span id="detalhes-numero">---</span>
+                </div>
+                <div id="container-referencia" class="end-ref-box">
+                    <strong>Ref:</strong> <span id="detalhes-referencia">---</span>
+                </div>
+                <div id="historico-ultima-visita"
+                    style="background-color: #f8f9fa; border-left: 4px solid #95a5a6; padding: 10px; margin: 15px 0; border-radius: 4px; font-size: 0.9rem; color: #555; display: none;">
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-bottom: 20px;">
+                <a id="link-gps-externo" href="#" target="_blank" class="btn-azul"
+                    style="text-decoration:none; background:#4285F4; flex:1; text-align: center; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-icons" style="font-size:1.2rem; margin-right:8px;">directions</span> Ir (GPS)
+                </a>
+                <button class="btn-azul" id="btn-share-individual"
+                    style="background:#25D366; width:auto; padding: 0 15px;">
+                    <span class="material-icons">share</span>
+                </button>
+            </div>
+            <div id="box-registro-visita-container" class="box-registro-visita hidden">
+                <label style="color: #3498db; font-weight: bold; margin-bottom: 8px; display: block;">Registro de
+                    Visita:</label>
+                <select id="sel-status-visita"
+                    style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                    <option value="">Selecione o status...</option>
+                    <option value="Visitado">Visitado</option>
+                    <option value="Nao em casa">Não em Casa</option>
+                    <option value="Nao atendeu">Não Atendeu</option>
+                    <option value="Voltar Outro Horario">Voltar Outro Horário</option>
+                    <option value="Nao Visitado">Não Visitado</option>
+                </select>
+                <input type="text" id="input-obs-visita" placeholder="Obs (opcional):"
+                    style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                <button class="btn-verde" onclick="salvarVisitaAtual()" style="width: 100%;">💾 Salvar Registro</button>
+            </div>
+            <div id="leaflet-map-unico"
+                style="height:200px; width:100%; border-radius: 8px; margin-top:15px; position:relative; z-index: 1;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modal-relatorio" class="modal-overlay hidden" style="z-index: 2200;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="margin:0">Relatório de Visitas</h3>
+            <button class="btn-close" onclick="toggleModal('modal-relatorio')"><span
+                    class="material-icons">close</span></button>
+        </div>
+        <div class="modal-body" id="lista-relatorio-body" style="background:#f9f9f9; padding:0;"></div>
+    </div>
+</div>
+
+<div id="modal-gestao-lista" class="modal-overlay hidden" style="z-index: 3000;">
+    <div class="modal-content" style="overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;">
+
+        <div class="modal-header" style="background: #2c3e50; color: white; flex-shrink: 0;">
+            <h3 style="color:white; font-size:1.2rem; margin:0;">Gestão de Dados</h3>
+            <button class="btn-close" onclick="toggleModal('modal-gestao-lista')"
+                style="background:rgba(255,255,255,0.2) !important; color:white;">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+
+        <div
+            style="display: flex; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; flex-shrink: 0;">
+            <button onclick="mudarAbaGestao('territorios')" id="tab-terr" class="tab-gestao active"
+                style="flex:1; padding:15px; border:none; background:transparent; font-weight:bold; border-bottom:4px solid #3498db; font-size:1rem;">
+                <span class="material-icons" style="font-size:18px; vertical-align:middle;">map</span> Cartões
+            </button>
+            <button onclick="mudarAbaGestao('enderecos')" id="tab-end" class="tab-gestao"
+                style="flex:1; padding:15px; border:none; background:transparent; color:#999; font-size:1rem;">
+                <span class="material-icons" style="font-size:18px; vertical-align:middle;">home</span> Endereços
+            </button>
+        </div>
+
+        <div id="view-gestao-territorios" class="modal-body" style="overflow-y: auto; flex: 1; padding: 15px;">
+            <div
+                style="background:#fff3cd; color:#856404; padding:10px; font-size:0.85rem; margin-bottom:10px; border-radius:6px;">
+                Use esta aba para <b>criar novos cartões</b> ou corrigir nomes de bairros.
+            </div>
+
+            <button class="btn-azul" onclick="executarProcessamentoRemoto()"
+                style="margin-bottom:15px; background:#8e44ad; width:100%;">
+                <span class="material-icons">engineering</span> Reorganizar Territórios (Auto)
+            </button>
+            <input type="text" placeholder="🔍 Buscar Cartão..." onkeyup="filtrarListaEdicao(this.value)"
+                style="margin-bottom:15px; width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+            <div id="lista-gestao-body"></div>
+        </div>
+
+        <div id="view-gestao-enderecos" class="modal-body hidden" style="overflow-y: auto; flex: 1; padding: 0;">
+
+            <div
+                style="position:sticky; top:0; background:#f0f2f5; padding:10px; z-index:5; border-bottom:1px solid #ddd;">
+                <input type="text" id="busca-endereco-gestao" placeholder="🔍 Buscar rua, número ou ID..."
+                    onkeyup="filtrarEnderecosGestao()"
+                    style="margin:0; width:100%; box-shadow: 0 2px 5px rgba(0,0,0,0.05); padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+
+                <button class="btn-azul" onclick="prepararNovoEndereco()"
+                    style="margin-top: 10px; background:#27ae60; width:100%;">
+                    <span class="material-icons">add_circle</span> NOVO ENDEREÇO
+                </button>
+            </div>
+
+            <div style="padding: 10px;">
+
+                <div id="form-gestao-endereco" class="hidden">
+                    <div class="form-gestao-group"
+                        style="border: 2px solid #3498db; padding: 10px; border-radius: 8px; background: white;">
+                        <h4
+                            style="margin:0 0 15px 0; color:#3498db; display:flex; justify-content:space-between; align-items:center;">
+                            <span>✏️ Dados do Endereço</span>
+                            <button onclick="fecharFormularioGestao()"
+                                style="background:#ffecec; border:1px solid #ffcccc; color:#e74c3c; font-size:0.8rem; padding:5px 10px; border-radius:4px; width:auto;">Fechar</button>
+                        </h4>
+
+                        <input type="hidden" id="edit-end-id">
+
+                        <label>Território (Qual cartão?)</label>
+                        <select id="edit-end-territorio" onchange="verificarLotacaoTerritorio(this.value)"
+                            style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                            <option value="">⏳ Carregando lista...</option>
+                        </select>
+                        <div id="msg-lotacao"
+                            style="font-size:0.8rem; text-align:right; margin-top:5px; font-weight:bold;"></div>
+
+                        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+                        <div style="display:flex; gap:10px; margin-bottom:10px;">
+                            <div style="flex:1;">
+                                <label style="font-size:0.85rem; color:#666;">Estado</label>
+                                <select id="edit-end-estado"
+                                    onchange="verificarEstadoNovo(this.value); carregarCidades(this.value)"
+                                    style="width:100%; padding:8px; border:1px solid #ccc; border-radius:6px; background:#fff;">
+                                    <option value="">UF</option>
+                                </select>
+                                <input type="text" id="input-estado-novo" class="hidden" placeholder="Sigla UF"
+                                    maxlength="2"
+                                    style="margin-top:5px; width:100%; padding:8px; border:1px solid #3498db; border-radius:6px; text-transform: uppercase;">
+                            </div>
+
+                            <div style="flex:2;">
+                                <label style="font-size:0.85rem; color:#666;">Cidade</label>
+                                <select id="edit-end-cidade"
+                                    onchange="verificarCidadeNovo(this.value); carregarBairros(this.value)"
+                                    style="width:100%; padding:8px; border:1px solid #ccc; border-radius:6px; background:#fff;">
+                                    <option value="">Selecione o Estado...</option>
+                                </select>
+                                <input type="text" id="input-cidade-novo" class="hidden" placeholder="Nome da Cidade"
+                                    style="margin-top:5px; width:100%; padding:8px; border:1px solid #3498db; border-radius:6px;">
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom:15px;">
+                            <label style="font-size:0.85rem; color:#666;">Bairro</label>
+                            <select id="edit-end-bairro" onchange="verificarBairroNovo(this.value)"
+                                style="width:100%; padding:8px; border:1px solid #ccc; border-radius:6px; background:#fff;">
+                                <option value="">Selecione a Cidade...</option>
+                            </select>
+                            <input type="text" id="input-bairro-novo" class="hidden"
+                                placeholder="Digite o nome do novo bairro"
+                                style="margin-top:5px; width:100%; padding:8px; border:1px solid #3498db; border-radius:6px;">
+                        </div>
+
+                        <div style="display:flex; gap:10px;">
+                            <div style="flex:3;">
+                                <label>Rua</label>
+                                <input type="text" id="edit-end-rua" placeholder="Nome da Rua"
+                                    style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px;">
+                            </div>
+                            <div style="flex:1;">
+                                <label>Nº</label>
+                                <input type="text" id="edit-end-numero" placeholder="123"
+                                    style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <label style="margin-top:10px; display:block;">Referência</label>
+                    <input type="text" id="edit-end-ref" placeholder="Ex: Casa verde..."
+                        style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px;">
+
+                    <label style="margin-top:10px; display:block;">GPS</label>
+                    <div style="display:flex; gap:5px;">
+                        <input type="text" id="edit-end-lat" placeholder="Lat"
+                            style="font-size:0.9rem; flex:1; padding:8px; border:1px solid #ccc; border-radius:6px;">
+                        <input type="text" id="edit-end-lng" placeholder="Lng"
+                            style="font-size:0.9rem; flex:1; padding:8px; border:1px solid #ccc; border-radius:6px;">
+                        <button onclick="pegarLocalizacaoAtual()"
+                            style="width:60px; background:#f39c12; color:white; border-radius:8px; border:none; cursor:pointer;">
+                            <span class="material-icons">my_location</span>
+                        </button>
+
+                    </div>
+
+                    <div style="display:flex; gap:10px; margin-top:15px;">
+                        <button id="btn-excluir-endereco" class="btn-vermelho hidden" type="button"
+                            onclick="excluirEnderecoAtual()"
+                            style="flex:1; background-color:#e74c3c; color:white; display:flex; align-items:center; justify-content:center; gap:5px; border:none; padding:10px; border-radius:4px; cursor:pointer;">
+                            <span class="material-icons" style="color:white;">delete</span>
+                            <span style="color:white; font-weight:bold;">EXCLUIR</span>
+                        </button>
+
+                        <button class="btn-verde" onclick="confirmarSalvarEndereco()"
+                            style="flex:2; height:auto; padding:10px;">SALVAR</button>
+                    </div>
+                </div>
+
+                <div id="lista-enderecos-gestao" style="margin-top:10px;">
+                    <p style="text-align:center; color:#999; margin-top:20px;">Carregando dados...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id="modal-editar-territorio" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width:400px; align-self:center;">
+        <div class="modal-header">
+            <h3>Editar Dados</h3><button class="btn-close" onclick="toggleModal('modal-editar-territorio')"><span
+                    class="material-icons">close</span></button>
+        </div>
+        <div class="modal-body">
+            <h4 id="edit-terr-id">---</h4>
+            <input type="text" id="edit-terr-nome">
+            <button class="btn-verde" onclick="salvarEdicaoTerritorio()">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-editar-usuario" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 400px; align-self: center;">
+        <div class="modal-header">
+            <h3 style="margin:0">Permissões</h3><button class="btn-close"
+                onclick="toggleModal('modal-editar-usuario')"><span class="material-icons">close</span></button>
+        </div>
+        <div class="modal-body">
+            <p id="edit-user-nome" style="font-weight: bold; margin-bottom: 10px;">---</p>
+            <div class="checkbox-group" style="display:flex; flex-direction:column; gap:8px; text-align:left;">
+
+                <label style="padding:5px; border:1px solid #eee; border-radius:4px;">
+                    <input type="checkbox" id="role-publicador" value="Publicador"> Publicador
+                </label>
+
+                <label style="padding:5px; border:1px solid #eee; border-radius:4px;">
+                    <input type="checkbox" id="role-servo" value="Servo"> Servo / Dirigente
+                </label>
+
+                <label style="padding:5px; border:1px solid #eee; border-radius:4px;">
+                    <input type="checkbox" id="role-editor" value="Editor"> Editor (Gestão Endereços)
+                </label>
+
+                <label style="padding:5px; border:1px solid #eee; border-radius:4px; background-color:#fff3cd;">
+                    <input type="checkbox" id="role-admin" value="Admin"> Admin (Gestão Usuários)
+                </label>
+
+            </div>
+            <br>
+            <button class="btn-verde" onclick="salvarEdicaoViaModal()" style="width:100%">Salvar</button>
+            <button class="btn-vermelho" style="margin-top:10px; background:#eee; color:#333; width:100%"
+                onclick="toggleModal('modal-editar-usuario')">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-perfil" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Perfil</h3><button class="btn-close" onclick="toggleModal('modal-perfil')"><span
+                    class="material-icons">close</span></button>
+        </div>
+        <div class="modal-body" style="text-align:center;">
+            <h2 id="perfil-nome">---</h2>
+            <p id="perfil-email">---</p>
+            <p id="perfil-funcao" style="color:#3498db; font-weight:bold;">---</p>
+            <div id="area-admin-panel" class="hidden"><button class="btn-designar"
+                    onclick="abrirGestaoUsuarios()">Gerenciar Usuários</button></div>
+            <button class="btn-azul" onclick="atualizarPWA()" style="background:#f1c40f; color:#333;">
+                <span class="material-icons">system_update</span> Buscar Atualização
+            </button>
+            <button class="btn-vermelho" onclick="fazerLogout()">
+                <span class="material-icons">logout</span> Sair
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-mapa" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="margin:0" id="titulo-mapa">...</h3><button class="btn-close"
+                onclick="toggleModal('modal-mapa')"><span class="material-icons">close</span></button>
+        </div>
+        <div class="modal-body">
+            <div id="conteudo-mapa"></div>
+        </div>
+    </div>
+</div>
+
+<div id="modal-confirmacao" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h3 id="confirm-titulo">Confirmação</h3>
+        <div id="confirm-texto" style="margin: 15px 0;">Tem certeza?</div>
+        <div class="acoes-confirmacao" style="display:flex; gap:10px;">
+            <button id="confirm-sim" class="btn-azul">Sim</button>
+            <button onclick="toggleModal('modal-confirmacao')" class="btn-azul"
+                style="background:#eee; color:#333;">Não</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-selecao" class="modal-overlay hidden">
+    <div class="modal-content" style="height: 80vh;">
+        <div class="modal-header">
+            <h3 style="margin:0;">Escolher Território</h3><button class="btn-close"
+                onclick="toggleModal('modal-selecao')"><span class="material-icons">close</span></button>
+        </div>
+        <div style="padding:10px; border-bottom:1px solid #eee;">
+            <input type="text" placeholder="Filtrar..." onkeyup="filtrarListaSelecao(this.value)"
+                style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px;">
+        </div>
+        <div id="corpo-selecao" class="modal-body" style="background:#f4f6f8;">
+            <p style="text-align:center; padding:20px; color:#666;">Carregando...</p>
+        </div>
+    </div>
+</div>

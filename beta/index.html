@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <title>Territórios</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#3498db">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+    <script src="ambiente.js"></script>
+</head>
+
+<body>
+
+    <div id="app-shell-container"></div>
+
+    <script>
+        /**
+         * Carregador do Shell: Injeta o HTML e inicializa o JS
+         */
+        async function carregarApp() {
+            try {
+                // 1. Busca o fragmento de conteúdo
+                const response = await fetch('conteudo.html');
+                if (!response.ok) throw new Error("Erro ao buscar conteudo.html");
+
+                const html = await response.text();
+                document.getElementById('app-shell-container').innerHTML = html;
+
+                // 2. Carrega o script de lógica dinamicamente
+                const scriptApp = document.createElement('script');
+                scriptApp.src = 'app.js';
+                scriptApp.onload = () => {
+                    // 3. Inicializa a aplicação após o carregamento do DOM e do Script
+                    if (typeof iniciarApp === 'function') {
+                        iniciarApp();
+                    }
+                };
+                document.body.appendChild(scriptApp);
+
+            } catch (err) {
+                console.error("Falha Crítica no Shell:", err);
+                document.body.innerHTML = `<div style="padding:20px; text-align:center;">
+                    <h3>⚠️ Erro ao carregar aplicação</h3>
+                    <p>Verifique sua conexão ou tente recarregar.</p>
+                    <button onclick="location.reload()">Recarregar</button>
+                </div>`;
+            }
+        }
+
+        // Inicia o ciclo de vida
+        carregarApp();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,355 @@
+/**
+ * ARQUIVO: Impressao.gs
+ * Versão: 12.0 (Design Ajustado para A5: QR Code 75px)
+ */
+
+// --- CONFIGURAÇÕES ---
+const ID_MODELO_DOC = "1wfVEVu17Kb7xpz-pmCyfwAXzT0QiyaZAImzyRQVnZnk"; 
+const NOME_ABA_ENDERECOS = "Endereços_Geral"; 
+const NOME_ABA_TERRITORIOS = "Territorios";     
+
+// 🛑 SUA CHAVE DE API
+const GOOGLE_MAPS_API_KEY = "AIzaSyAr81jbkxlxqwOt_Ywzmk2bsFUKtlGUvBI"; 
+// --------------------
+
+function gerarCartaoPDF(idTerritorio) {
+  console.log(`[INÍCIO v12] Gerando cartão: ${idTerritorio}`);
+  
+  let copia = null;
+
+  try {
+    // 1. DADOS
+    const dadosTerritorio = buscarDadosTerritorio(idTerritorio);
+    if (!dadosTerritorio) throw new Error(`Território não encontrado.`);
+    const listaEnderecos = buscarEnderecosParaImpressao(idTerritorio);
+    
+    // 2. CÓPIA DO DOC
+    const arquivoModelo = DriveApp.getFileById(ID_MODELO_DOC);
+    copia = arquivoModelo.makeCopy(`Cartão ${idTerritorio} - ${dadosTerritorio.nome}`);
+    const doc = DocumentApp.openById(copia.getId());
+    const body = doc.getBody();
+
+    // 3. SUBSTITUIÇÕES DE TEXTO
+    const substituir = (tag, valor) => {
+       const v = valor === null || valor === undefined ? "" : valor.toString();
+       body.replaceText(tag, v);
+    };
+
+    substituir("<<\\[Territorio_ID\\]>>", dadosTerritorio.id); 
+    substituir("<<\\[Bairros_Abrangidos\\]>>", dadosTerritorio.nome);
+    
+    let cidadeReal = "Itaperuna - RJ"; 
+    if (listaEnderecos.length > 0 && listaEnderecos[0].cidade) cidadeReal = listaEnderecos[0].cidade;
+    substituir("<<Cidade>>", cidadeReal);
+    
+    const dataHoje = Utilities.formatDate(new Date(), "GMT-3", "MM/yyyy");
+    substituir("<<Data>>", dataHoje);
+
+    // 4. MAPA (Largura 450px)
+    let urlMapa = dadosTerritorio.imagemUrl;
+    if (!urlMapa && listaEnderecos.length > 0 && GOOGLE_MAPS_API_KEY) {
+       urlMapa = gerarUrlMapaGoogle(listaEnderecos);
+    }
+
+    if (urlMapa) {
+       inserirImagemSegura(body, "<<Imagem_Mapa>>", urlMapa, 450, 400);
+    } else {
+       substituir("<<Imagem_Mapa>>", ""); 
+    }
+
+    // 5. QR CODE (Ajustado para tamanho A5 - 75px) 📱
+    if (listaEnderecos.length > 0) {
+        const linkRota = gerarLinkRotaGoogle(listaEnderecos);
+        
+        if (linkRota) {
+            // Gera QR Code
+            const urlQR = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(linkRota)}`;
+            
+            // --- AQUI ESTÁ A MUDANÇA: 75, 75 ---
+            inserirImagemSegura(body, "<<QR>>", urlQR, 75, 75);
+        } else {
+            substituir("<<QR>>", "");
+        }
+    } else {
+        substituir("<<QR>>", "");
+    }
+
+    // 6. TABELA
+    if (listaEnderecos.length > 0) preencherTabelaEnderecos(body, listaEnderecos);
+
+    // 7. FINALIZAR
+    doc.saveAndClose(); 
+    const pdfBlob = copia.getAs(MimeType.PDF);
+    const arquivoFinal = DriveApp.createFile(pdfBlob).setName(`Cartão ${idTerritorio}.pdf`);
+    arquivoFinal.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    copia.setTrashed(true); 
+
+    return { sucesso: true, url: arquivoFinal.getUrl() };
+
+  } catch (e) {
+    console.error(`[ERRO] ${e.toString()}`);
+    try { if(copia) copia.setTrashed(true); } catch(x){}
+    return { erro: "Erro: " + e.toString() };
+  }
+}
+
+// --- FUNÇÕES AUXILIARES ---
+
+function inserirImagemSegura(body, tag, url, w, h) {
+  try {
+    const range = body.findText(tag);
+    if (!range) return;
+
+    const elemento = range.getElement();
+    
+    // Fetch
+    const resp = UrlFetchApp.fetch(url, {muteHttpExceptions: true});
+    if (resp.getResponseCode() !== 200) {
+        elemento.asText().setText(""); 
+        return;
+    }
+
+    const blob = resp.getBlob();
+    elemento.asText().setText(""); 
+
+    const pai = elemento.getParent();
+    let img = null;
+    
+    if (pai.getType() == DocumentApp.ElementType.PARAGRAPH) {
+        img = pai.asParagraph().insertInlineImage(0, blob);
+    } else if (pai.getType() == DocumentApp.ElementType.LIST_ITEM) {
+        img = pai.asListItem().insertInlineImage(0, blob);
+    }
+    
+    if (img) {
+        if (w) img.setWidth(w);
+        if (h) img.setHeight(h);
+    }
+  } catch(e) {
+    body.replaceText(tag, ""); 
+  }
+}
+
+function gerarUrlMapaGoogle(enderecos) {
+  let baseUrl = "https://maps.googleapis.com/maps/api/staticmap?";
+  let params = ["size=600x400", "maptype=roadmap"];
+
+  enderecos.forEach(end => {
+     if (end.lat && end.lng) {
+       let lat = end.lat.toString().replace(",", ".");
+       let lng = end.lng.toString().replace(",", ".");
+       let markerStr = `color:red|label:${end.seq}|${lat},${lng}`;
+       params.push("markers=" + encodeURIComponent(markerStr));
+     }
+  });
+  
+  params.push(`key=${GOOGLE_MAPS_API_KEY}`);
+  return baseUrl + params.join("&");
+}
+
+function gerarLinkRotaGoogle(enderecos) {
+    const coords = enderecos
+        .filter(e => e.lat && e.lng)
+        .map(e => `${e.lat.toString().replace(",", ".")},${e.lng.toString().replace(",", ".")}`);
+    
+    if (coords.length === 0) return "";
+
+    const destino = coords[coords.length - 1]; 
+    let url = "";
+    
+    if (coords.length > 1) {
+       const waypoints = coords.slice(0, coords.length - 1).join('|');
+       url = `https://www.google.com/maps/dir/?api=1&destination=${destino}&waypoints=${waypoints}&travelmode=driving`;
+    } else {
+       url = `https://www.google.com/maps/dir/?api=1&destination=${destino}&travelmode=driving`;
+    }
+    return url;
+}
+
+function buscarDadosTerritorio(id) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const aba = ss.getSheetByName(NOME_ABA_TERRITORIOS);
+  if (!aba) return null;
+  const dados = aba.getDataRange().getValues();
+  const h = dados[0].map(c => c.toString().trim());
+  const idxID = h.indexOf("Territorio_ID");
+  const idxNome = h.indexOf("Bairros_Abrangidos");
+  const idxImg = h.indexOf("Imagem_Mapa_Completo"); 
+  for (let i = 1; i < dados.length; i++) {
+    if (dados[i][idxID] && dados[i][idxID].toString() == id.toString()) {
+      return { id: dados[i][idxID], nome: dados[i][idxNome], imagemUrl: (idxImg > -1) ? dados[i][idxImg] : null };
+    }
+  }
+  return null;
+}
+
+function buscarEnderecosParaImpressao(idTerr) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const aba = ss.getSheetByName(NOME_ABA_ENDERECOS);
+  if (!aba) return [];
+  const dados = aba.getDataRange().getValues();
+  const h = dados[0].map(c => c.toString().trim());
+  
+  const idxTerr = h.indexOf("Territorio_ID"); 
+  const idxCidade = h.indexOf("Cidade"); 
+  const idxBairro = h.indexOf("Bairro"); // NOVO: Captura o índice da coluna Bairro
+  const idxRua = h.indexOf("Rua"); 
+  const idxNum = h.indexOf("Numero"); 
+  const idxRef = h.indexOf("Referencia");
+  
+  let idxLat = h.indexOf("Latitude"); if (idxLat === -1) idxLat = h.indexOf("Lat");
+  let idxLng = h.indexOf("Longitude"); if (idxLng === -1) idxLng = h.indexOf("Lon");
+  
+  const lista = []; let seq = 1;
+  for (let i = 1; i < dados.length; i++) {
+    if (dados[i][idxTerr] && dados[i][idxTerr].toString() == idTerr.toString()) {
+      const lat = (idxLat > -1) ? dados[i][idxLat] : null; 
+      const lng = (idxLng > -1) ? dados[i][idxLng] : null;
+      let gpsTxt = (lat && lng) ? `${lat}, ${lng}` : "";
+      
+      lista.push({ 
+        seq: seq++, 
+        cidade: idxCidade > -1 ? dados[i][idxCidade] : "", 
+        bairro: idxBairro > -1 ? dados[i][idxBairro] : "", // NOVO: Adiciona o bairro ao objeto
+        rua: idxRua > -1 ? dados[i][idxRua] : "", 
+        num: idxNum > -1 ? dados[i][idxNum] : "", 
+        ref: idxRef > -1 ? dados[i][idxRef] : "", 
+        gps: gpsTxt, 
+        lat: lat, 
+        lng: lng 
+      });
+    }
+  }
+  return lista;
+}
+
+function preencherTabelaEnderecos(body, enderecos) {
+  const tabelas = body.getTables();
+  let tabelaAlvo = null;
+  for (let t of tabelas) {
+    if (t.getNumRows() > 0 && (t.getRow(0).getText().includes("Rua") || t.getRow(0).getText().includes("Endereço"))) {
+      tabelaAlvo = t; break;
+    }
+  }
+  if (!tabelaAlvo || tabelaAlvo.getNumRows() < 2) return; 
+  const linhaModelo = tabelaAlvo.getRow(1); 
+  for (let i = 0; i < enderecos.length; i++) {
+    const end = enderecos[i];
+    const novaLinha = linhaModelo.copy();
+    const rep = (tag, val) => novaLinha.replaceText(tag, (val||"").toString());
+    
+    rep("<<Seq>>", end.seq); 
+    rep("<<Rua>>", end.rua); 
+    rep("<<Num>>", end.num); 
+    rep("<<Bairro>>", end.bairro); // NOVO: Faz a substituição da tag <<Bairro>>
+    rep("<<Ref>>", end.ref); 
+    rep("<<GPS>>", end.gps);
+    
+    tabelaAlvo.appendTableRow(novaLinha);
+  }
+  tabelaAlvo.removeRow(1);
+}
+
+function TESTE_MANUAL() {
+  console.log(gerarCartaoPDF("TERR-014"));
+}
+
+
+// Adicione/Substitua estas funções no Impressao.gs
+
+function processarSolicitacaoPDF(idTerritorio, forcarNovo = false) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const aba = ss.getSheetByName("Territorios");
+  const dados = aba.getDataRange().getValues();
+  
+  let linha = -1;
+  let linkExistente = "";
+  
+  const headers = dados[0];
+  const idxId = headers.indexOf("Territorio_ID");
+  const idxLink = headers.indexOf("Link_PDF"); 
+  
+  if (idxId === -1) return { erro: "Coluna Territorio_ID não encontrada" };
+  
+  for (let i = 1; i < dados.length; i++) {
+    if (dados[i][idxId].toString() == idTerritorio) {
+      linha = i + 1; 
+      if (idxLink > -1) linkExistente = dados[i][idxLink];
+      break;
+    }
+  }
+  
+  if (linha === -1) return { erro: "Território não encontrado" };
+
+  // --- NOVA VERIFICAÇÃO DE INTEGRIDADE ---
+  let arquivoValido = false;
+  
+  if (linkExistente && !forcarNovo) {
+    try {
+      // Tenta pegar o ID do arquivo pelo Link
+      const idArquivo = linkExistente.match(/[-\w]{25,}/);
+      if (idArquivo) {
+        const arquivo = DriveApp.getFileById(idArquivo[0]);
+        // Verifica se não está na lixeira
+        if (!arquivo.isTrashed()) {
+          arquivoValido = true;
+        }
+      }
+    } catch (e) {
+      // Se der erro (arquivo não existe), arquivoValido continua false
+      console.warn("Link antigo quebrado, gerando novo...");
+    }
+  }
+
+  // Se o link existe E o arquivo é válido, retorna ele (Cache)
+  if (arquivoValido) {
+    return { sucesso: true, url: linkExistente, cached: true };
+  }
+  // ---------------------------------------
+
+  // Se chegou aqui, é porque não tem link OU o arquivo foi apagado OU forçou novo
+  const resultadoGeracao = gerarCartaoPDF(idTerritorio); 
+  
+  if (resultadoGeracao.sucesso) {
+    if (idxLink === -1) {
+      const novaCol = headers.length + 1;
+      aba.getRange(1, novaCol).setValue("Link_PDF");
+      aba.getRange(linha, novaCol).setValue(resultadoGeracao.url);
+    } else {
+      aba.getRange(linha, idxLink + 1).setValue(resultadoGeracao.url);
+    }
+    
+    organizarArquivoNoDrive(resultadoGeracao.url, idTerritorio);
+    
+    return { sucesso: true, url: resultadoGeracao.url, cached: false };
+  } else {
+    return resultadoGeracao;
+  }
+}
+
+// Função auxiliar para não bagunçar a raiz do Drive
+function organizarArquivoNoDrive(url, idTerritorio) {
+  try {
+    const idArquivo = url.match(/[-\w]{25,}/);
+    if (!idArquivo) return;
+    
+    const arquivo = DriveApp.getFileById(idArquivo);
+    const nomePasta = "Cartões Gerados (Sistema)";
+    
+    // Verifica se pasta existe
+    const pastas = DriveApp.getFoldersByName(nomePasta);
+    let pastaDestino;
+    if (pastas.hasNext()) {
+      pastaDestino = pastas.next();
+    } else {
+      pastaDestino = DriveApp.createFolder(nomePasta);
+    }
+    
+    // Move o arquivo (Adiciona na pasta e remove da raiz)
+    pastaDestino.addFile(arquivo);
+    DriveApp.getRootFolder().removeFile(arquivo); // Remove da raiz para não duplicar visualmente
+    
+  } catch (e) {
+    console.warn("Erro ao mover arquivo: " + e.toString());
+  }
+}

@@ -1,0 +1,116 @@
+function doPost(e) {
+  // Recebe os dados como texto e transforma em objeto JSON
+  var dados = JSON.parse(e.postData.contents);
+  var acao = dados.acao;
+  var resultado = {};
+
+  try {
+    // --- ROTAS DE LOGIN E PERFIL ---
+    if (acao === "verificarLogin") {
+       resultado = verificarLogin(dados.email); 
+    } 
+    
+    // --- ROTAS DE TERRITÓRIOS ---
+    else if (acao === "buscarTerritorios") {
+       resultado = buscarTerritorios(dados.email); 
+    }
+    else if (acao === "buscarEnderecosPorTerritorio") {
+       resultado = buscarEnderecosPorTerritorio(dados.id); 
+    }
+    else if (acao === "listarTodosTerritoriosAdmin") {
+       resultado = listarTodosTerritoriosAdmin();
+    }
+    
+    // --- GERAÇÃO DE PDF ---
+    else if (acao === "gerarPDF") {
+       resultado = processarSolicitacaoPDF(dados.id, dados.forcar);
+    }
+    
+    // --- ROTAS DE AÇÕES (PEDIR/DESIGNAR/DEVOLVER) ---
+    else if (acao === "processarAcaoTerritorio") {
+       resultado = processarAcaoTerritorio(dados);
+    }
+    else if (acao === "salvarRegistroVisita") {
+       resultado = salvarRegistroVisita(dados);
+    }
+    else if (acao === "listarHistoricoTerritorio") {
+       resultado = listarHistoricoTerritorio(dados);
+    }
+    else if (acao === "aprovarPedidoTerritorio") {
+       resultado = aprovarPedidoTerritorio(dados.email, dados.idTerritorio);
+    }
+    else if (acao === "sugerirTrocaTerritorio") {
+       resultado = sugerirTrocaTerritorio(dados.email, dados.idAtual, dados.novoID);
+    }
+    else if (acao === "devolverTerritorio") {
+       resultado = devolverTerritorio(dados.idTerritorio, dados.email);
+    }
+    
+    // --- ROTAS DE CADASTRO E SOLICITAÇÕES ---
+    else if (acao === "solicitarCadastro") {
+       resultado = solicitarCadastro(dados);
+    }
+    else if (acao === "buscarSolicitacoes") {
+       resultado = buscarSolicitacoes(dados.email);
+    }
+    else if (acao === "aprovarCadastro") {
+       resultado = aprovarCadastro(dados.adminEmail, dados.emailAlvo, dados.nomeAlvo, dados.nivel);
+    }
+    else if (acao === "recusarSolicitacao") {
+       resultado = recusarSolicitacao(dados.email, dados.info, dados.tipo, dados.motivo);
+    }
+
+    // --- ROTAS DE GESTÃO DE USUÁRIOS ---
+    else if (acao === "listarTodosUsuarios") {
+       resultado = listarTodosUsuarios(dados.email); 
+    }
+    else if (acao === "salvarEdicaoUsuario") {
+       resultado = salvarEdicaoUsuario(dados.adminEmail, dados.emailAlvo, dados.novosPapeis);
+    }
+    else if (acao === "excluirUsuario") {
+       resultado = excluirUsuario(dados.adminEmail, dados.emailAlvo);
+    }
+
+    // --- ROTAS DE GESTÃO DE DADOS (ENDEREÇOS E TERRITÓRIOS) ---
+    else if (acao === "listarTodosEnderecosSimples") {
+       resultado = listarTodosEnderecosSimples();
+    }
+    else if (acao === "salvarEnderecoGestao") {
+       resultado = salvarEnderecoGestao(dados);
+    }
+    // --- NOVO: ROTA DE EXCLUSÃO DE ENDEREÇO ---
+    else if (acao === "excluirEndereco") {
+       resultado = excluirEndereco(dados.idEndereco);
+    }
+    // ------------------------------------------
+
+    else if (acao === "salvarDadosTerritorio") {
+       // Atenção: certifique-se que sua função salvarDadosTerritorio espera (id, nome) ou (dados)
+       // Se ela for: function salvarDadosTerritorio(id, nome) {...} use:
+       resultado = salvarDadosTerritorio(dados.idTerritorio, dados.novoNome);
+       // Se ela for: function salvarDadosTerritorio(dados) {...} mantenha como estava.
+    }
+    
+    else if (acao === "listarHierarquiaLocais") {
+        var dadosLocais = listarHierarquiaLocais();
+        resultado = { hierarquia: dadosLocais };
+    }
+
+    else if (acao === "processarTerritoriosAPI") {
+        // Chama o Agrupador
+        resultado = processarTudoAPI(); 
+    }
+    
+    // --- ROTA PADRÃO (ERRO) ---
+    else {
+       resultado = { erro: "Ação não reconhecida: " + acao };
+    }
+    
+  } catch (err) {
+    resultado = { erro: "Erro no servidor: " + err.toString() };
+  }
+
+  // Devolve a resposta para o App
+  return ContentService.createTextOutput(JSON.stringify(resultado))
+    .setMimeType(ContentService.MimeType.JSON);
+}
