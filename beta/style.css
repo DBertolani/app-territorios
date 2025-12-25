@@ -714,32 +714,42 @@ body.mapa-fullscreen-active {
 }
 
 /* =========================================
-   ESTILOS DO MODAL DE CONFIRMAÇÃO (RESPONSIVO)
+   ESTILOS DO MODAL DE CONFIRMAÇÃO (CORRIGIDO)
    ========================================= */
 
 #modal-confirmacao {
-    display: flex !important;           /* Força o uso de Flexbox para centralizar */
-    align-items: center !important;     /* Centraliza verticalmente */
-    justify-content: center !important; /* Centraliza horizontalmente */
-    padding: 20px;                      /* Margem de segurança para não colar na borda do celular */
-    z-index: 9999 !important;           /* Garante que fique acima de tudo */
-    background: rgba(0,0,0,0.6) !important; /* Escurece o fundo um pouco mais */
+    /* REMOVIDO O !important DAQUI PARA O .hidden FUNCIONAR */
+    display: flex;
+
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px;
+    z-index: 9999 !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+
+    /* Garante que comece invisível se tiver a classe hidden */
+    transition: opacity 0.3s ease;
+}
+
+/* Reforço para garantir que ele suma quando tiver a classe hidden */
+#modal-confirmacao.hidden {
+    display: none !important;
 }
 
 /* A caixa branca interna */
 #modal-confirmacao .modal-content {
     position: relative !important;
-    margin: 0 !important;               /* Remove margens antigas */
-    top: 0 !important;                  /* Remove posicionamentos absolutos antigos */
+    margin: 0 !important;
+    top: 0 !important;
     left: 0 !important;
-    transform: none !important;         
-    
-    width: 100% !important;             /* Ocupa a largura disponível... */
-    max-width: 400px !important;        /* ...mas trava em 400px no PC */
-    
+    transform: none !important;
+
+    width: 100% !important;
+    max-width: 400px !important;
+
     background: white;
-    border-radius: 12px;                /* Bordas arredondadas modernas */
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
     padding: 20px;
     animation: surgirSuave 0.3s ease-out;
 }
@@ -748,20 +758,26 @@ body.mapa-fullscreen-active {
 #modal-confirmacao .acoes-confirmacao {
     display: flex;
     gap: 10px;
-    justify-content: center; /* Botões centralizados ou flex-end para direita */
+    justify-content: center;
     margin-top: 20px;
 }
 
 #modal-confirmacao .acoes-confirmacao button {
-    flex: 1; /* Faz os botões terem o mesmo tamanho */
+    flex: 1;
     padding: 12px;
     border-radius: 6px;
     font-weight: bold;
     cursor: pointer;
 }
 
-/* Pequena animação de entrada */
 @keyframes surgirSuave {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
