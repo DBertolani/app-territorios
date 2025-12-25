@@ -1,5 +1,3 @@
-
-
 <div id="toast-container"></div>
 
 <header class="app-header hidden" id="app-header">
@@ -250,10 +248,14 @@
                         <label>Território (Qual cartão?)</label>
                         <select id="edit-end-territorio" onchange="verificarLotacaoTerritorio(this.value)"
                             style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+
+                            <option value="">-- Sem Território --</option>
+
                             <option value="">⏳ Carregando lista...</option>
                         </select>
                         <div id="msg-lotacao"
                             style="font-size:0.8rem; text-align:right; margin-top:5px; font-weight:bold;"></div>
+                            
 
                         <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
 

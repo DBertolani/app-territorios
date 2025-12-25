@@ -34,16 +34,43 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.url.includes('script.google.com')) return;
+  const req = event.request;
+  const url = new URL(req.url);
+
+  // ❌ Nunca interceptar métodos que não sejam GET
+  if (req.method !== 'GET') return;
+
+  // ❌ Nunca interceptar Apps Script
+  if (url.hostname.includes('script.google.com')) return;
+
+  // ❌ Nunca interceptar extensões, ads, analytics, etc.
+  if (
+    url.protocol !== 'http:' &&
+    url.protocol !== 'https:'
+  ) {
+    return;
+  }
+
+  // ❌ Só cacheia arquivos do próprio site
+  if (url.origin !== self.location.origin) {
+    return;
+  }
 
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request).then((response) => {
-        return caches.open(CACHE_STATIC).then((cache) => {
-          cache.put(event.request, response.clone());
-          return response;
+    caches.match(req).then((cached) => {
+      if (cached) return cached;
+
+      return fetch(req).then((res) => {
+        if (!res || res.status !== 200) return res;
+
+        const clone = res.clone();
+        caches.open(CACHE_STATIC).then((cache) => {
+          cache.put(req, clone);
         });
+
+        return res;
       });
     })
   );
 });
+

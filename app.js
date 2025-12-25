@@ -1316,23 +1316,22 @@ function verificarLotacaoTerritorio(terrId) {
 
 
 
-// ======================================================
-// LÓGICA DE SALVAR COM CONFIRMAÇÃO DETALHADA
-// ======================================================
 
+// ======================================================
+// LÓGICA DE SALVAR COM CONFIRMAÇÃO DETALHADA (CORRIGIDA)
+// ======================================================
 function confirmarSalvarEndereco() {
-    // 1. Coleta e Validação (Igual fazia antes)
     var id = document.getElementById('edit-end-id').value;
 
-    // Lógica Estado
+    // Estado
     var estado = document.getElementById('edit-end-estado').value;
     if (estado === "NOVO_CUSTOM") estado = document.getElementById('input-estado-novo').value.trim().toUpperCase();
 
-    // Lógica Cidade
+    // Cidade
     var cidade = document.getElementById('edit-end-cidade').value;
     if (cidade === "NOVO_CUSTOM") cidade = document.getElementById('input-cidade-novo').value.trim();
 
-    // Lógica Bairro
+    // Bairro
     var bairro = document.getElementById('edit-end-bairro').value;
     if (bairro === "NOVO_CUSTOM") bairro = document.getElementById('input-bairro-novo').value.trim();
 
@@ -1341,11 +1340,14 @@ function confirmarSalvarEndereco() {
     var ref = document.getElementById('edit-end-ref').value;
     var terr = document.getElementById('edit-end-territorio').value;
 
+    // Validações
     if (!estado || !cidade || !bairro) return mostrarNotificacao("Preencha Estado, Cidade e Bairro.", "erro");
     if (!rua) return mostrarNotificacao("A rua é obrigatória.", "erro");
-    if (!terr) return mostrarNotificacao("Selecione o Território.", "erro");
 
-    // Objeto de dados pronto
+    // Normaliza território vazio para "SEM"
+    if (!terr || terr.trim() === "") terr = "SEM";
+
+    // Monta objeto
     var dadosParaSalvar = {
         idEndereco: id,
         cidade: `${cidade} - ${estado}`,
@@ -1358,7 +1360,7 @@ function confirmarSalvarEndereco() {
         lng: document.getElementById('edit-end-lng').value
     };
 
-    // 2. Configura o Modal de Confirmação
+    // Configura modal de confirmação
     var modal = document.getElementById('modal-confirmacao');
     var titulo = document.getElementById('confirm-titulo');
     var texto = document.getElementById('confirm-texto');
@@ -1368,64 +1370,62 @@ function confirmarSalvarEndereco() {
 
     titulo.innerText = id ? "Confirmar Edição" : "Confirmar Novo Endereço";
 
-    // Resumo dos dados que serão salvos
     texto.innerHTML = `
-        <div style="text-align:left; background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee; font-size:0.9rem; word-wrap: break-word; overflow-y: auto; max-height: 60vh;">
-            <p style="margin-bottom:5px;"><strong>Território:</strong> ${terr}</p>
-            <p style="margin-bottom:5px;"><strong>Cidade/Bairro:</strong> ${cidade} - ${bairro}</p>
-            <hr style="margin:10px 0; border:0; border-top:1px solid #ddd;">
-            <p style="margin-bottom:5px;"><strong>Rua:</strong> <span style="color:#2980b9; font-weight:bold;">${rua}</span></p>
-            <p style="margin-bottom:5px;"><strong>Número:</strong> ${numero}</p>
-            <p style="margin-bottom:0;"><strong>Ref:</strong> ${ref || '---'}</p>
+        <div style="text-align:left; background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee; font-size:0.9rem;">
+            <p><strong>Território:</strong> ${terr}</p>
+            <p><strong>Cidade/Bairro:</strong> ${cidade} - ${bairro}</p>
+            <hr style="margin:10px 0; border-top:1px solid #ddd;">
+            <p><strong>Rua:</strong> <span style="color:#2980b9; font-weight:bold;">${rua}</span></p>
+            <p><strong>Número:</strong> ${numero}</p>
+            <p><strong>Ref:</strong> ${ref || '---'}</p>
         </div>
         <p style="margin-top:15px; text-align:center; font-weight:500; color:#555;">Confirmar estes dados?</p>
     `;
 
-    // 3. Define a ação do botão SIM (Passando os dados)
-    // Clonamos o botão para limpar eventos anteriores
+    // Limpa eventos anteriores e define ação do botão SIM
     var novoBtnSim = btnSim.cloneNode(true);
     btnSim.parentNode.replaceChild(novoBtnSim, btnSim);
 
     novoBtnSim.onclick = function () {
-        toggleModal('modal-confirmacao'); // Fecha modal
-        executarSalvarReal(dadosParaSalvar); // Chama a função que salva de verdade
+        toggleModal('modal-confirmacao');
+        executarSalvarReal(dadosParaSalvar);
     };
 }
 
-function executarSalvarReal(dados) {
-    // Feedback visual no botão SALVAR
-    var btnSalvar = document.getElementById('btn-salvar-endereco');
-    // Se não achar pelo ID (caso não tenha colocado id no html), tenta querySelector
-    if (!btnSalvar) btnSalvar = document.querySelector('#form-gestao-endereco .btn-verde');
 
+function executarSalvarReal(dados) {
+    var btnSalvar = document.getElementById('btn-salvar-endereco') || document.querySelector('#form-gestao-endereco .btn-verde');
     var textoOriginal = btnSalvar.innerHTML;
 
     btnSalvar.disabled = true;
     btnSalvar.innerHTML = '<span class="material-icons" style="font-size:16px; animation:spin 1s infinite linear">sync</span> Salvando...';
 
-    chamarAPI("salvarEnderecoGestao", dados).then(res => {
-        btnSalvar.disabled = false;
-        btnSalvar.innerHTML = textoOriginal;
+    chamarAPI("salvarEnderecoGestao", dados)
+        .then(res => {
+            btnSalvar.disabled = false;
+            btnSalvar.innerHTML = textoOriginal;
 
-        if (res.erro) {
-            mostrarNotificacao(res.erro, "erro");
-        } else {
-            mostrarNotificacao("Registro salvo com sucesso!", "sucesso");
-            fecharFormularioGestao();
+            if (res.erro) {
+                mostrarNotificacao(res.erro, "erro");
+            } else {
+                mostrarNotificacao(res.mensagem || "Registro salvo com sucesso!", "sucesso");
+                fecharFormularioGestao();
 
-            // Lógica de limpar cache se for bairro novo
-            if (document.getElementById('input-bairro-novo').value) {
-                cacheLocais = {};
-                carregarDadosLocais();
+                // Se cadastrou bairro novo, recarrega cache
+                if (document.getElementById('input-bairro-novo').value) {
+                    cacheLocais = {};
+                    carregarDadosLocais();
+                }
+                carregarGestaoEnderecos();
             }
-            carregarGestaoEnderecos();
-        }
-    }).catch(err => {
-        btnSalvar.disabled = false;
-        btnSalvar.innerHTML = textoOriginal;
-        mostrarNotificacao("Erro de conexão.", "erro");
-    });
+        })
+        .catch(err => {
+            btnSalvar.disabled = false;
+            btnSalvar.innerHTML = textoOriginal;
+            mostrarNotificacao("Erro de conexão: " + err, "erro");
+        });
 }
+
 
 
 // --- LÓGICA DE LOCALIZAÇÃO (ESTADO/CIDADE/BAIRRO) ---
@@ -1569,6 +1569,18 @@ function salvarEnderecoGestao() {
         if (!bairro) return mostrarNotificacao("Digite o nome do novo bairro.", "erro");
     }
 
+    // --- AJUSTE PARA TERRITÓRIO ---
+    // Captura o valor direto do select. Se for a opção vazia, terrFinal será ""
+
+    if (!terrFinal || terrFinal.trim() === "") {
+        terrFinal = "SEM"; // Valor sentinela para indicar ausência de território
+    }
+
+
+    console.log("Enviando Território:", terrFinal); // Verifique isso no F12 do navegador
+    //////////////////////////////////////
+
+
     if (!estado || !cidade || !bairro) {
         return mostrarNotificacao("Selecione Estado, Cidade e Bairro.", "erro");
     }
@@ -1578,15 +1590,16 @@ function salvarEnderecoGestao() {
 
     var dados = {
         idEndereco: id,
+        idTerritorio: terrFinal,
         cidade: cidadeFormatada,
         bairro: bairro,
-        idTerritorio: document.getElementById('edit-end-territorio').value,
         rua: document.getElementById('edit-end-rua').value,
         numero: document.getElementById('edit-end-numero').value,
         referencia: document.getElementById('edit-end-ref').value,
         lat: document.getElementById('edit-end-lat').value,
         lng: document.getElementById('edit-end-lng').value
     };
+
 
     if (!dados.rua) return mostrarNotificacao("A rua é obrigatória.", "erro");
 
