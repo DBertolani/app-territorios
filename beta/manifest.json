@@ -1,6 +1,8 @@
+
 {
   "name": "Territórios da Congregação",
   "short_name": "Territórios",
+  "description": "Sistema de Gestão de Territórios - PWA simples e rápido",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -9,13 +11,18 @@
   "icons": [
     {
       "src": "icon-192.png",
-      "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-256.png",
+      "sizes": "256x256",
+      "type": "image/png"
     },
     {
       "src": "icon-512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ]
 }

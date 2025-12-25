@@ -1,76 +1,46 @@
-/* ==========================================================================
- * ARQUIVO: service-worker.js (Versão 4.0.0-shell)
+
+/* ========================================================================== 
+ * ARQUIVO: service-worker.js (Versão 4.1.0)
  * ========================================================================== */
-
-const CACHE_VERSION = 'v4.0.0-shell';
+const CACHE_VERSION = 'v4.1.0-shell';
 const CACHE_STATIC = `static-${CACHE_VERSION}`;
+const OFFLINE_URL = './offline.html';
 
-// ATIVOS CRÍTICOS (Shell + Conteúdo)
 const STATIC_ASSETS = [
   './',
   './index.html',
-  './conteudo.html',  // NOVO: Fragmento de conteúdo
-  './ambiente.js',    // NOVO: Configurador de ambiente
+  './conteudo.html',
+  './ambiente.js',
   './style.css',
   './app.js',
   './manifest.json',
-  './icon-192.png'
+  './icon-192.png',
+  './icon-512.png',
+  OFFLINE_URL
 ];
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_STATIC).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_STATIC).then(cache => cache.addAll(STATIC_ASSETS))
   );
 });
 
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then((keyList) => {
-      return Promise.all(keyList.map((key) => {
+    caches.keys().then(keys => Promise.all(
+      keys.map(key => {
         if (key !== CACHE_STATIC) return caches.delete(key);
-      }));
-    })
+      })
+    ))
   );
 });
 
-self.addEventListener('fetch', (event) => {
-  const req = event.request;
-  const url = new URL(req.url);
-
-  // ❌ Nunca interceptar métodos que não sejam GET
-  if (req.method !== 'GET') return;
-
-  // ❌ Nunca interceptar Apps Script
-  if (url.hostname.includes('script.google.com')) return;
-
-  // ❌ Nunca interceptar extensões, ads, analytics, etc.
-  if (
-    url.protocol !== 'http:' &&
-    url.protocol !== 'https:'
-  ) {
-    return;
-  }
-
-  // ❌ Só cacheia arquivos do próprio site
-  if (url.origin !== self.location.origin) {
-    return;
-  }
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-
-      return fetch(req).then((res) => {
-        if (!res || res.status !== 200) return res;
-
-        const clone = res.clone();
-        caches.open(CACHE_STATIC).then((cache) => {
-          cache.put(req, clone);
-        });
-
-        return res;
-      });
-    })
+    fetch(event.request).catch(() =>
+      caches.match(event.request).then(res => res || caches.match(OFFLINE_URL))
+    )
   );
 });
-
