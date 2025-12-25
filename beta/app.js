@@ -1569,6 +1569,13 @@ function salvarEnderecoGestao() {
         if (!bairro) return mostrarNotificacao("Digite o nome do novo bairro.", "erro");
     }
 
+    // --- AJUSTE PARA TERRITÓRIO ---
+    var terrRaw = document.getElementById('edit-end-territorio').value;
+    // Se o valor for vazio ou o texto fixo, mandamos vazio para a planilha
+    var territorioFinal = (terrRaw === "" || terrRaw === "sem-territorio") ? "" : terrRaw;
+    //////////////////////////////////////
+
+
     if (!estado || !cidade || !bairro) {
         return mostrarNotificacao("Selecione Estado, Cidade e Bairro.", "erro");
     }
@@ -1580,7 +1587,10 @@ function salvarEnderecoGestao() {
         idEndereco: id,
         cidade: cidadeFormatada,
         bairro: bairro,
-        idTerritorio: document.getElementById('edit-end-territorio').value,
+
+        ////idTerritorio: document.getElementById('edit-end-territorio').value,
+        idTerritorio: territorioFinal, // <--- VALOR TRATADO AQUI
+
         rua: document.getElementById('edit-end-rua').value,
         numero: document.getElementById('edit-end-numero').value,
         referencia: document.getElementById('edit-end-ref').value,
