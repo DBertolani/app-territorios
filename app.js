@@ -938,27 +938,27 @@ function carregarGestaoEnderecos(filtroId = null) {
                 if (e && e.terr) {
                     // O SEGREDO: String(..).trim() remove espaços que enganam o sistema
                     var chaveLimpa = String(e.terr).trim();
-                    
+
                     if (!contagemPorTerritorio[chaveLimpa]) contagemPorTerritorio[chaveLimpa] = 0;
                     contagemPorTerritorio[chaveLimpa]++;
                 }
             });
         }
-        
+
         // Atualiza o <select> agora que já sabemos os números (X/6)
         atualizarSelectTerritorios('edit-end-territorio');
         // ============================================================
 
         // 3. APLICAÇÃO DOS FILTROS (Mantendo EXATAMENTE sua lógica)
-        
+
         // Caso A: Filtro "Sem Território"
         if (filtroId === 'SEM') {
             var filtrados = cacheEnderecosGestao.filter(e => !e.terr || e.terr.trim() === "");
             renderizarListaEnderecosGestao(filtrados);
-            
+
             // Garante que o dropdown mostre "Sem Território" se abrir um endereço
             var sel = document.getElementById('edit-end-territorio');
-            if(sel) sel.value = ""; 
+            if (sel) sel.value = "";
             return;
         }
 
@@ -966,7 +966,7 @@ function carregarGestaoEnderecos(filtroId = null) {
         if (filtroId) {
             // Garante que o dropdown já venha selecionado com "10"
             var sel = document.getElementById('edit-end-territorio');
-            if(sel) sel.value = filtroId;
+            if (sel) sel.value = filtroId;
 
             // Usa '==' para garantir que Texto "10" bata com Número 10
             var filtrados = cacheEnderecosGestao.filter(e => e.terr == filtroId);
@@ -1004,18 +1004,18 @@ function atualizarSelectTerritorios(idSelect) {
         // --- AQUI ESTÁ A ÚNICA MUDANÇA ---
         // Criamos uma "chave limpa" apenas para BUSCAR a quantidade certa na memória
         // Isso resolve o problema de espaços ou tipos diferentes (texto vs número)
-        var idLimpo = String(t.id).trim(); 
+        var idLimpo = String(t.id).trim();
         var qtd = contagemPorTerritorio[idLimpo] || 0;
         // ---------------------------------
 
         var status = qtd >= 6 ? '(CHEIO)' : `(${qtd}/6)`;
-        
+
         var option = document.createElement("option");
         option.value = t.id; // O valor do option continua o original (seguro para o backend)
         option.text = `${t.id} - ${t.nome} ${status}`;
-        
+
         if (qtd >= 6) option.style.color = 'red';
-        
+
         select.appendChild(option);
     });
 
@@ -1629,3 +1629,172 @@ function executarProcessamentoRemoto() {
     });
 }
 
+// ==========================================================
+// --- NOVA FUNCIONALIDADE: GESTÃO DE BAIRROS (Não afeta o resto) ---
+// ==========================================================
+
+var cacheConfigLocais = [];
+
+// --- NOVA FUNÇÃO (Padrão Portal - Conforme Relatório Técnico) ---
+function abrirConfigLocais() {
+    var modal = document.getElementById('modal-config-locais');
+    
+    if (modal) {
+        // --- O TRUQUE DE MESTRE ---
+        // Move a janela para o final do "body" do site.
+        // Isso garante que ela fique POR CIMA de qualquer outra janela aberta.
+        document.body.appendChild(modal);
+        // ---------------------------
+
+        // Remove a classe hidden para mostrar
+        modal.classList.remove('hidden');
+        
+        // Carrega os dados
+        carregarTabelaConfigLocais();
+    } else {
+        console.error("Erro: Janela modal-config-locais não encontrada no HTML.");
+    }
+}
+
+
+function carregarTabelaConfigLocais() {
+    var tbody = document.getElementById('tabela-config-locais');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Carregando configurações...</td></tr>';
+
+    chamarAPI("listarConfiguracoesLocais").then(res => {
+        if (res.erro) {
+            tbody.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">${res.erro}</td></tr>`;
+            return;
+        }
+
+        cacheConfigLocais = res.locais || [];
+        renderizarTabelaLocais(cacheConfigLocais);
+    });
+}
+
+function renderizarTabelaLocais(lista) {
+    var tbody = document.getElementById('tabela-config-locais');
+    tbody.innerHTML = '';
+
+    if (!lista || lista.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Nenhum local configurado.</td></tr>';
+        return;
+    }
+
+    lista.forEach((item, index) => {
+        var tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #eee';
+
+        tr.innerHTML = `
+            <td style="padding:10px;">
+                <div style="font-weight:bold; color:#2c3e50;">${item.bairro}</div>
+                <div style="font-size:0.75rem; color:#7f8c8d;">${item.cidade}</div>
+            </td>
+            <td style="padding:10px;">
+                <input type="text" value="${item.sigla}" id="sigla-${index}" maxlength="5"
+                       style="width:60px; padding:5px; border:1px solid #ddd; border-radius:4px; text-transform:uppercase; text-align:center;">
+            </td>
+            <td style="padding:10px;">
+                <input type="text" value="${item.zona}" id="zona-${index}" list="lista-zonas-sugestao"
+                       style="width:90px; padding:5px; border:1px solid #ddd; border-radius:4px;">
+            </td>
+            <td style="padding:10px; text-align:center;">
+                <div style="display:flex; gap:5px; justify-content:center;">
+                    <button class="icon-btn" onclick="salvarLinhaConfig(${index})" title="Salvar Sigla/Zona" style="color:#27ae60; background:#eafaf1;">
+                        <span class="material-icons" style="font-size:18px;">save</span>
+                    </button>
+                    <button class="icon-btn" onclick="iniciarRenomeacao(${index})" title="Corrigir Nome (Renomear)" style="color:#f39c12; background:#fef5e7;">
+                        <span class="material-icons" style="font-size:18px;">edit</span>
+                    </button>
+                    <button class="icon-btn" onclick="tentarExcluirBairro(${index})" title="Excluir (Somente se vazio)" style="color:#c0392b; background:#fdedec;">
+                        <span class="material-icons" style="font-size:18px;">delete</span>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function filtrarTabelaLocais() {
+    var termo = document.getElementById('filtro-config-locais').value.toLowerCase();
+    var filtrados = cacheConfigLocais.filter(l =>
+        l.bairro.toLowerCase().includes(termo) ||
+        l.cidade.toLowerCase().includes(termo)
+    );
+    renderizarTabelaLocais(filtrados);
+}
+
+// AÇÃO 1: SALVAR SIGLA E ZONA
+function salvarLinhaConfig(index) {
+    var item = cacheConfigLocais[index];
+    var novaSigla = document.getElementById(`sigla-${index}`).value.toUpperCase();
+    var novaZona = document.getElementById(`zona-${index}`).value;
+
+    mostrarNotificacao("Salvando...", "info");
+
+    chamarAPI("salvarConfigLocal", {
+        chaveOriginal: item.chave,
+        novaSigla: novaSigla,
+        novaZona: novaZona
+    }).then(res => {
+        if (res.erro) mostrarNotificacao(res.erro, "erro");
+        else mostrarNotificacao("Atualizado com sucesso!");
+    });
+}
+
+// AÇÃO 2: RENOMEAR (A CORREÇÃO DO "SÃO FRANCISO")
+function iniciarRenomeacao(index) {
+    var item = cacheConfigLocais[index];
+    var novoNome = prompt(`Corrigir nome do bairro:\n\nAtual: ${item.bairro}\nCidade: ${item.cidade}`, item.bairro);
+
+    if (novoNome && novoNome !== item.bairro) {
+        if (!confirm(`⚠️ ATENÇÃO!\n\nIsso mudará "${item.bairro}" para "${novoNome}".\n\nTodos os endereços que usam esse bairro serão atualizados automaticamente para não ficarem perdidos.\n\nDeseja continuar?`)) return;
+
+        mostrarNotificacao("Corrigindo em todo o sistema...", "info");
+
+        chamarAPI("renomearBairroGlobal", {
+            chaveAntiga: item.chave,
+            novoNomeBairro: novoNome
+        }).then(res => {
+            if (res.erro) {
+                mostrarNotificacao(res.erro, "erro");
+            } else {
+                mostrarNotificacao(res.sucesso, "sucesso");
+
+                // Recarrega a tabela de config
+                carregarTabelaConfigLocais();
+
+                // IMPORTANTE: Limpa o cache de locais do formulário de endereços
+                // para que o nome novo apareça lá imediatamente
+                cacheLocais = {};
+                carregarDadosLocais();
+
+                // Atualiza a lista de endereços se estiver aberta
+                if (typeof carregarGestaoEnderecos === 'function') carregarGestaoEnderecos();
+            }
+        });
+    }
+}
+
+// AÇÃO 3: EXCLUIR (LIXEIRA SEGURA)
+function tentarExcluirBairro(index) {
+    var item = cacheConfigLocais[index];
+
+    if (!confirm(`Deseja excluir "${item.bairro}" da lista?\n\nO sistema só permitirá se NÃO houver nenhum endereço vinculado.`)) return;
+
+    mostrarNotificacao("Verificando...", "info");
+
+    chamarAPI("excluirConfigLocal", { chave: item.chave }).then(res => {
+        if (res.erro) {
+            alert(res.erro); // Mostra o erro detalhado (Ex: "Tem 5 endereços")
+            mostrarNotificacao("Não foi possível excluir.", "erro");
+        } else {
+            mostrarNotificacao("Bairro removido!", "sucesso");
+            carregarTabelaConfigLocais();
+            cacheLocais = {}; // Limpa cache global
+            carregarDadosLocais();
+        }
+    });
+}

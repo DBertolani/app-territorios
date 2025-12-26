@@ -1,4 +1,6 @@
-<html lang="pt-BR"></html>
+<html lang="pt-BR">
+
+</html>
 
 <div id="toast-container"></div>
 
@@ -194,14 +196,24 @@
 
         <div
             style="display: flex; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; flex-shrink: 0;">
+
             <button onclick="mudarAbaGestao('territorios')" id="tab-terr" class="tab-gestao active"
                 style="flex:1; padding:15px; border:none; background:transparent; font-weight:bold; border-bottom:4px solid #3498db; font-size:1rem;">
                 <span class="material-icons" style="font-size:18px; vertical-align:middle;">map</span> Cartões
             </button>
+
             <button onclick="mudarAbaGestao('enderecos')" id="tab-end" class="tab-gestao"
                 style="flex:1; padding:15px; border:none; background:transparent; color:#999; font-size:1rem;">
                 <span class="material-icons" style="font-size:18px; vertical-align:middle;">home</span> Endereços
             </button>
+
+            <div style="display:flex; align-items:center; padding: 0 10px; border-left: 1px solid #eee;">
+                <button onclick="abrirConfigLocais()" class="btn-azul" title="Configurar Bairros"
+                    style="background: #7f8c8d; font-size: 0.8rem; padding: 8px 12px; display: flex; align-items: center; gap: 5px;">
+                    <span class="material-icons" style="font-size:18px;">settings</span>
+                    <span style="display:none; @media(min-width: 400px){display:inline;}">Config.</span>
+                </button>
+            </div>
         </div>
 
         <div id="view-gestao-territorios" class="modal-body" style="overflow-y: auto; flex: 1; padding: 15px;">
@@ -460,3 +472,39 @@
         </div>
     </div>
 </div>
+<div id="modal-config-locais" class="modal-overlay hidden" style="z-index: 99999 !important;">
+    <div class="modal-content" style="width: 95%; max-width: 800px; height: 90vh; display:flex; flex-direction:column; background: white; margin: 2% auto;">
+        
+        <div class="modal-header">
+            <h3>🏙️ Gestão de Cidades e Bairros</h3>
+            <button class="btn-close" onclick="toggleModal('modal-config-locais')">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+
+        <div class="modal-body" style="flex:1; overflow:hidden; display:flex; flex-direction:column;">
+            <div style="padding:10px; background:#f9f9f9; border-bottom:1px solid #eee;">
+                <input type="text" id="filtro-config-locais" placeholder="🔍 Buscar bairro ou cidade..." 
+                       onkeyup="filtrarTabelaLocais()"
+                       style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px;">
+            </div>
+            
+            <div style="flex:1; overflow-y:auto; padding:0;">
+                <table style="width:100%; border-collapse: collapse; font-size:0.9rem;">
+                    <thead style="background:#eee; position:sticky; top:0;">
+                        <tr>
+                            <th style="padding:10px; text-align:left;">Local</th>
+                            <th style="padding:10px; text-align:left; width:70px;">Sigla</th>
+                            <th style="padding:10px; text-align:left; width:90px;">Zona</th>
+                            <th style="padding:10px; text-align:center; width:120px;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-config-locais">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
