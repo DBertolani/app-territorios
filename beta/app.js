@@ -918,31 +918,70 @@ function carregarListaTerritoriosGestao() {
 function carregarGestaoEnderecos(filtroId = null) {
     fecharFormularioGestao();
     var divLista = document.getElementById('lista-enderecos-gestao');
-    divLista.innerHTML = '<p>Buscando dados...</p>';
+    divLista.innerHTML = '<div style="text-align:center; padding:20px;"><span class="material-icons" style="animation:spin 1s linear infinite;">sync</span><br>Buscando dados...</div>';
 
     Promise.all([
         chamarAPI("listarTodosTerritoriosAdmin"),
         chamarAPI("listarTodosEnderecosSimples")
     ]).then(([resTerr, resEnd]) => {
+        // 1. CARREGA DADOS (Sua lógica original)
         cacheTerritoriosLista = Array.isArray(resTerr) ? resTerr : [];
         cacheEnderecosGestao = resEnd.enderecos || [];
 
+        // ============================================================
+        // 2. A CORREÇÃO: CALCULAR A CONTAGEM ANTES DE TUDO
+        // ============================================================
+        contagemPorTerritorio = {}; // Reseta a memória global de contagem
+
+        if (Array.isArray(cacheEnderecosGestao)) {
+            cacheEnderecosGestao.forEach(e => {
+                if (e && e.terr) {
+                    // O SEGREDO: String(..).trim() remove espaços que enganam o sistema
+                    var chaveLimpa = String(e.terr).trim();
+                    
+                    if (!contagemPorTerritorio[chaveLimpa]) contagemPorTerritorio[chaveLimpa] = 0;
+                    contagemPorTerritorio[chaveLimpa]++;
+                }
+            });
+        }
+        
+        // Atualiza o <select> agora que já sabemos os números (X/6)
+        atualizarSelectTerritorios('edit-end-territorio');
+        // ============================================================
+
+        // 3. APLICAÇÃO DOS FILTROS (Mantendo EXATAMENTE sua lógica)
+        
+        // Caso A: Filtro "Sem Território"
         if (filtroId === 'SEM') {
             var filtrados = cacheEnderecosGestao.filter(e => !e.terr || e.terr.trim() === "");
             renderizarListaEnderecosGestao(filtrados);
+            
+            // Garante que o dropdown mostre "Sem Território" se abrir um endereço
+            var sel = document.getElementById('edit-end-territorio');
+            if(sel) sel.value = ""; 
             return;
         }
 
+        // Caso B: Filtro por ID específico (Ex: Clicou no cartão "10")
         if (filtroId) {
-            var filtrados = cacheEnderecosGestao.filter(e => e.terr === filtroId);
+            // Garante que o dropdown já venha selecionado com "10"
+            var sel = document.getElementById('edit-end-territorio');
+            if(sel) sel.value = filtroId;
+
+            // Usa '==' para garantir que Texto "10" bata com Número 10
+            var filtrados = cacheEnderecosGestao.filter(e => e.terr == filtroId);
             renderizarListaEnderecosGestao(filtrados);
             return;
         }
 
+        // Caso C: Mostrar tudo
         renderizarListaEnderecosGestao(cacheEnderecosGestao);
+
     }).catch(err => {
         console.error("ERRO DETALHADO:", err);
-        divLista.innerHTML = `<p style="color:red;">Erro ao carregar dados.</p>`;
+        divLista.innerHTML = `<div style="text-align:center; padding:20px; color:red;">
+            <span class="material-icons">error_outline</span><br>Erro ao carregar dados.
+        </div>`;
     });
 }
 
@@ -955,23 +994,33 @@ function atualizarSelectTerritorios(idSelect) {
     if (!select) return;
 
     var valorAtual = select.value;
+
+    // Mantém a sua opção "Sem Território" que já funciona
     select.innerHTML = '<option value="">-- Sem Território --</option>';
 
     if (!cacheTerritoriosLista || !Array.isArray(cacheTerritoriosLista)) return;
 
     cacheTerritoriosLista.forEach(t => {
-        var qtd = contagemPorTerritorio[t.id] || 0;
+        // --- AQUI ESTÁ A ÚNICA MUDANÇA ---
+        // Criamos uma "chave limpa" apenas para BUSCAR a quantidade certa na memória
+        // Isso resolve o problema de espaços ou tipos diferentes (texto vs número)
+        var idLimpo = String(t.id).trim(); 
+        var qtd = contagemPorTerritorio[idLimpo] || 0;
+        // ---------------------------------
+
         var status = qtd >= 6 ? '(CHEIO)' : `(${qtd}/6)`;
+        
         var option = document.createElement("option");
-        option.value = t.id;
+        option.value = t.id; // O valor do option continua o original (seguro para o backend)
         option.text = `${t.id} - ${t.nome} ${status}`;
+        
         if (qtd >= 6) option.style.color = 'red';
+        
         select.appendChild(option);
     });
 
     if (valorAtual) select.value = valorAtual;
 }
-
 
 
 
