@@ -1,6 +1,6 @@
 
 /* ========================================================================== 
- * ARQUIVO: service-worker.js (Versão 4.1.0)
+ * ARQUIVO: service-worker.js (Versão 4.1.1)
  * ========================================================================== */
 const CACHE_VERSION = 'v4.1.0-shell';
 const CACHE_STATIC = `static-${CACHE_VERSION}`;
