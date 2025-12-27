@@ -105,7 +105,11 @@ function fazerLogin() {
     chamarAPI("verificarLogin", { email: email }).then(processarLogin);
 }
 
+
 function processarLogin(r) {
+    // ✅ Garante que usuarioEmail não fique vazio
+    if (!usuarioEmail && r.email) usuarioEmail = r.email;
+
     document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
 
     if (r.status === "APROVADO") {
@@ -124,36 +128,21 @@ function processarLogin(r) {
         var roles = r.nivel.toLowerCase();
 
         // --- DEFINIÇÃO DE PAPÉIS ---
-
-        // 1. GESTORES (Servo ou Dirigente ou Admin)
-        // Eles veem o Painel Admin (para aprovar territórios) e o Sino.
         var isGestor = roles.includes('admin') || roles.includes('servo') || roles.includes('dirigente');
-
-        // 2. EDITOR (Quem mexe nos endereços)
-        // Apenas quem tem "Editor" explicitamente vê a Gestão de Dados.
         var isEditor = roles.includes('editor');
-
-        // 3. ADMIN (Superusuário)
-        // Pode aprovar cadastros de usuários novos.
         var isAdmin = roles.includes('admin');
 
-
         // --- CONTROLE DOS BOTÕES ---
-
-        // Botão "Gestão" (Lista de Endereços) -> SÓ EDITOR
         document.getElementById('nav-gestao').classList.toggle('hidden', !isEditor);
-
-        // Painel Admin e Sino -> GESTORES (Admin, Servo, Dirigente)
         document.getElementById('area-admin-panel').classList.toggle('hidden', !isGestor);
         document.getElementById('btn-admin-bell').classList.toggle('hidden', !isGestor);
 
-        // Botão de Imprimir -> Editor ou Admin
+        // Botão de Imprimir (mantido)
         if ((isEditor || isAdmin) && !document.querySelector('.btn-print')) {
             var btnPrint = document.createElement('button');
             btnPrint.className = 'btn-print';
             btnPrint.innerHTML = '<span class="material-icons">print</span> Imprimir Cartões';
             btnPrint.onclick = () => alert("Geração de PDF em desenvolvimento.");
-
             var modalBody = document.querySelector('#modal-perfil .modal-body');
             if (modalBody) modalBody.insertBefore(btnPrint, modalBody.lastElementChild);
         }
@@ -164,12 +153,24 @@ function processarLogin(r) {
         navegarPara('tela-sistema');
         carregarSistema();
 
+        // ✅ Upgrade: Exibe alerta fixo para novos aprovados
+        if (!localStorage.getItem('alertaMostrado')) {
+            mostrarNotificacao("Bem-vindo! Seu acesso foi liberado.", "sucesso");
+            localStorage.setItem('alertaMostrado', 'true');
+        }
+
+        // ✅ Se backend enviar alerta, também mostra
+        if (r.alerta) {
+            mostrarNotificacao(r.alerta, "sucesso");
+        }
+
     } else if (r.status === "PENDENTE") {
         navegarPara('tela-pendente');
     } else {
         navegarPara('tela-cadastro');
     }
 }
+
 
 function fazerLogout() {
     localStorage.removeItem('app_territorios_email');
@@ -299,7 +300,19 @@ function abrirMapa(id, nome, isMeu) {
                     ul.appendChild(li);
 
                     // Marcador no Mapa
-                    L.marker(latLng).addTo(mapaAtual).bindPopup(`<b>${i + 1}</b>. ${end.rua}, ${end.numero}`);
+
+                    // Ícone personalizado com número
+                    var markerIcon = L.divIcon({
+                        className: 'custom-marker',
+                        html: `<div class="marker-number">${i + 1}</div>`,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 30]
+                    });
+
+                    L.marker(latLng, { icon: markerIcon })
+                        .addTo(mapaAtual)
+                        .bindPopup(`<b>${i + 1}</b>. ${end.rua}, ${end.numero}`);
+
                 });
 
                 if (bounds.length) mapaAtual.fitBounds(bounds, { padding: [30, 30] });
@@ -611,9 +624,39 @@ function abrirAcaoSolicitacao(email, nome, info, tipo) {
     }
 }
 
+
+
 function aprovarPedido(email, id, modoDireto = false) {
-    if (modoDireto) { if (!confirm(`Confirmar aprovação de ${id} para ${email}?`)) return; chamarAPI("aprovarPedidoTerritorio", { email: email, idTerritorio: id }).then(r => { mostrarNotificacao(r.sucesso || "Aprovado com sucesso!"); toggleModal('modal-confirmacao'); carregarSistema(); }); } else { confirmarAcao("Aprovar", "Confirmar designação?", () => chamarAPI("aprovarPedidoTerritorio", { email: email, idTerritorio: id }).then(carregarSistema)); }
+    if (modoDireto) {
+        // Modal estilizado em vez de confirm()
+        confirmarAcao("Aprovar Pedido", `Confirmar aprovação do território ${id} para ${email}?`, () => {
+            mostrarNotificacao("Processando...", "info"); // Feedback imediato
+            chamarAPI("aprovarPedidoTerritorio", { email: email, idTerritorio: id }).then(r => {
+                mostrarNotificacao(r.sucesso || "Aprovado com sucesso!", "sucesso");
+                if (r.alerta) {
+                    mostrarNotificacao(r.alerta, "sucesso");
+                }
+                toggleModal('modal-confirmacao');
+                carregarSistema();
+            });
+        });
+    } else {
+        confirmarAcao("Aprovar", "Confirmar designação?", () => {
+            mostrarNotificacao("Processando...", "info");
+            chamarAPI("aprovarPedidoTerritorio", { email: email, idTerritorio: id }).then(r => {
+                mostrarNotificacao(r.sucesso || "Aprovado com sucesso!", "sucesso");
+                if (r.alerta) {
+                    mostrarNotificacao(r.alerta, "sucesso");
+                }
+                carregarSistema();
+            });
+        });
+    }
 }
+
+
+
+
 
 function recusarPedido(email, info, tipo, modoDireto = false) {
     if (modoDireto) { var motivo = prompt("Motivo da recusa (opcional):", "Indisponível"); if (motivo === null) return; chamarAPI("recusarSolicitacao", { email: email, info: info, tipo: tipo, motivo: motivo }).then(() => { mostrarNotificacao("Solicitação recusada."); toggleModal('modal-confirmacao'); carregarSolicitacoes(); }); } else { chamarAPI("recusarSolicitacao", { email: email, info: info, tipo: tipo }).then(carregarSolicitacoes); }
@@ -785,7 +828,34 @@ function salvarEdicaoViaModal() {
     });
 }
 
-function processarAprovacaoCadastro(email, nome, idContainer) { var checks = document.querySelectorAll(`#${idContainer} input:checked`); if (!checks.length) return mostrarNotificacao("Selecione um papel.", "erro"); var papeis = Array.from(checks).map(c => c.value).join(", "); confirmarAcao("Aprovar", `Aprovar ${nome} como ${papeis}?`, () => { chamarAPI("aprovarCadastro", { adminEmail: usuarioEmail, emailAlvo: email, nomeAlvo: nome, nivel: papeis }).then(() => { mostrarNotificacao("Aprovado!"); carregarSolicitacoes(); }); }); }
+
+
+function processarAprovacaoCadastro(email, nome, idContainer) {
+    var checks = document.querySelectorAll(`#${idContainer} input:checked`);
+    if (!checks.length) return mostrarNotificacao("Selecione um papel.", "erro");
+
+    var papeis = Array.from(checks).map(c => c.value).join(", ");
+    confirmarAcao("Aprovar Cadastro", `Aprovar ${nome} como ${papeis}?`, () => {
+        mostrarNotificacao("Processando...", "info");
+        chamarAPI("aprovarCadastro", {
+            adminEmail: usuarioEmail,
+            emailAlvo: email,
+            nomeAlvo: nome,
+            nivel: papeis
+        }).then(r => {
+            mostrarNotificacao(r.sucesso || "Aprovado!", "sucesso");
+            if (r.alerta) {
+                mostrarNotificacao(r.alerta, "sucesso");
+            }
+            carregarSolicitacoes();
+        });
+    });
+}
+
+
+
+
+
 function abrirSeletorTerritorio(cb) { window.callbackSelecao = cb; toggleModal('modal-selecao'); document.getElementById('corpo-selecao').innerHTML = '<p style="text-align:center">Carregando...</p>'; chamarAPI("listarTodosTerritoriosAdmin").then(res => { var body = document.getElementById('corpo-selecao'); body.innerHTML = ''; res.forEach(t => { var extraInfo = t.status === 'Ocupado' ? (t.dataEntrega || t.data ? `<span style="font-size:0.8rem; color:#e74c3c;">Prev. Entrega: ${t.dataEntrega || t.data}</span>` : '<span style="font-size:0.8rem; color:#e74c3c;">Ocupado</span>') : '<span style="font-size:0.8rem; color:#27ae60;">Livre</span>'; body.innerHTML += `<div class="item-selecao" onclick="toggleModal('modal-selecao'); window.callbackSelecao('${t.id}')"><div><b>${t.id}</b> - ${t.nome}</div><div>${extraInfo}</div></div>`; }); }); }
 
 function enviarSolicitacao() {
@@ -1638,7 +1708,7 @@ var cacheConfigLocais = [];
 // --- NOVA FUNÇÃO (Padrão Portal - Conforme Relatório Técnico) ---
 function abrirConfigLocais() {
     var modal = document.getElementById('modal-config-locais');
-    
+
     if (modal) {
         // --- O TRUQUE DE MESTRE ---
         // Move a janela para o final do "body" do site.
@@ -1648,7 +1718,7 @@ function abrirConfigLocais() {
 
         // Remove a classe hidden para mostrar
         modal.classList.remove('hidden');
-        
+
         // Carrega os dados
         carregarTabelaConfigLocais();
     } else {
