@@ -791,12 +791,13 @@ body.mapa-fullscreen-active {
     left: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    z-index: 2147483647 !important; /* Máximo possível */
-    background: rgba(0,0,0,0.6) !important;
+    z-index: 2147483647 !important;
+    /* Máximo possível */
+    background: rgba(0, 0, 0, 0.6) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    
+
     /* Remove heranças que prendem a janela atrás */
     transform: none !important;
     filter: none !important;
@@ -807,3 +808,132 @@ body.mapa-fullscreen-active {
 #modal-config-locais.hidden {
     display: none !important;
 }
+
+.custom-marker {
+    background: #3498db;
+    color: #fff;
+    font-weight: bold;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 30px;
+    font-size: 14px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.custom-marker .marker-number {
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    text-align: center;
+    line-height: 30px;
+}
+
+
+.modal-overlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px; /* Evita corte nas bordas */
+}
+
+.modal-body {
+    max-height: 90vh; /* Limita altura ao tamanho da tela */
+    overflow-y: auto; /* Ativa rolagem interna */
+    box-sizing: border-box;
+}
+
+
+
+#modal-confirmacao .modal-content {
+    max-height: 90vh; /* Limita altura ao tamanho da tela */
+    overflow-y: auto; /* Ativa rolagem interna */
+    display: flex;
+    flex-direction: column;
+}
+
+#modal-confirmacao .modal-body {
+    flex: 1;
+    overflow-y: auto;
+}
+
+
+
+/* --- MELHORIA VISUAL PARA MODAL DE CONFIRMAÇÃO --- */
+#modal-confirmacao .modal-content {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    animation: surgirSuave 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#modal-confirmacao h3 {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+#modal-confirmacao p {
+    font-size: 1rem;
+    color: #7f8c8d;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Botão fechar no canto superior direito */
+#modal-confirmacao .btn-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #f2f2f2;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+#modal-confirmacao .btn-close:hover {
+    background: #e0e0e0;
+}
+
+/* Botões de ação */
+#modal-confirmacao .acoes-confirmacao button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+#modal-confirmacao .acoes-confirmacao button:hover {
+    transform: scale(1.03);
+}
+
+
+
+/* --- SPINNER DE CARREGAMENTO --- */
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    animation: spin 1s linear infinite;
+    margin: 15px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
